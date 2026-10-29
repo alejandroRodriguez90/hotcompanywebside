@@ -1,0 +1,251 @@
+/* ═══════════════════════════════════════════════════════════
+   TOKENS & DESIGN SYSTEM — HOT COMPANY S.A.S.
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* Brand Colors */
+  --color-bg: #0A0A0B;
+  --color-surface: #141012;
+  --color-surface-hover: #1F191C;
+  --color-primary: #E10600;
+  --color-secondary: #FF6A13;
+  --color-accent: #FFB020;
+  --color-text: #F5F1EC;
+  --color-muted: #A89F98;
+
+  /* Brand Gradients */
+  --gradient-brand: linear-gradient(135deg, #E10600 0%, #FF6A13 50%, #FFB020 100%);
+  --gradient-brand-h: linear-gradient(90deg, #E10600 0%, #FF6A13 50%, #FFB020 100%);
+  --gradient-brand-145: linear-gradient(145deg, #E10600 0%, #FF6A13 50%, #FFB020 100%);
+
+  /* Radius */
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-full: 9999px;
+
+  /* Glass mouse tracking (updated via JS) */
+  --mx: 50%;
+  --my: 50%;
+}
+
+/* ── GLASS SYSTEM (iOS / Liquid Glass) ───────────────────── */
+
+/**
+ * .glass — Base glass panel
+ * Uso: tarjetas, chips, badges, steps
+ */
+.glass {
+  background: rgba(255, 255, 255, 0.065);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.20) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.40) inset,
+    0 20px 50px -20px rgba(0, 0, 0, 0.75);
+  position: relative;
+  overflow: hidden;
+}
+
+/**
+ * .glass-strong — Stronger glass (navbar, modals, mobile menu)
+ */
+.glass-strong {
+  background: rgba(20, 16, 18, 0.65);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.16) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.5) inset,
+    0 24px 60px -24px rgba(0, 0, 0, 0.85);
+  position: relative;
+  overflow: hidden;
+}
+
+/**
+ * .glass-tint-warm — Warm (red/orange) tinted glass for highlighted cards
+ */
+.glass-tint-warm {
+  background: rgba(255, 106, 19, 0.085);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 106, 19, 0.24);
+  box-shadow:
+    0 1px 0 rgba(255, 176, 32, 0.28) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.4) inset,
+    0 20px 50px -20px rgba(225, 6, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+/**
+ * Specular edge highlight (iOS "bright top-left rim")
+ * Requires position:relative on parent
+ */
+.glass::before,
+.glass-strong::before,
+.glass-tint-warm::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.08) 28%,
+    transparent 60%,
+    rgba(255, 255, 255, 0.12) 100%
+  );
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: destination-out;
+  pointer-events: none;
+  z-index: 1;
+  padding: 1px;
+}
+
+/**
+ * Dynamic mouse-follow spotlight inside glass panels
+ * JS updates --mx/--my on each card
+ */
+.glass-spotlight::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    280px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(255, 106, 19, 0.16) 0%,
+    rgba(255, 176, 32, 0.07) 45%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 0.3s;
+}
+
+/* Reducción de blur en dispositivos móviles para optimizar GPU (60fps) */
+@media (max-width: 640px) {
+  .glass,
+  .glass-strong,
+  .glass-tint-warm {
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+  }
+}
+
+/* Fallback para prefers-reduced-transparency */
+@media (prefers-reduced-transparency: reduce) {
+  .glass,
+  .glass-strong,
+  .glass-tint-warm {
+    background: rgba(20, 16, 18, 0.96) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+/* Fallback for browsers without backdrop-filter support */
+@supports not (backdrop-filter: blur(1px)) {
+  .glass, .glass-strong, .glass-tint-warm {
+    background: rgba(20, 16, 18, 0.95) !important;
+  }
+}
+
+/* ── TEXT UTILITIES ──────────────────────────────────────── */
+.text-gradient {
+  background: var(--gradient-brand-h);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-145 {
+  background: var(--gradient-brand-145);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Outline text (for service numbers) */
+.text-outline {
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.18);
+  color: transparent;
+}
+
+.text-outline-brand {
+  -webkit-text-stroke: 1px rgba(255, 106, 19, 0.35);
+  color: transparent;
+}
+
+/* ── GLOW UTILITIES ──────────────────────────────────────── */
+.glow-primary { box-shadow: 0 0 30px -5px rgba(225, 6, 0, 0.4); }
+.glow-secondary { box-shadow: 0 0 30px -5px rgba(255, 106, 19, 0.4); }
+.glow-warm { box-shadow: 0 0 20px -5px rgba(255, 176, 32, 0.35); }
+
+/* Gradient border via pseudo-element */
+.gradient-border {
+  position: relative;
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--gradient-brand-145);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: destination-out;
+  pointer-events: none;
+}
+
+/* CIIU chip monospace badge */
+.ciiu-chip {
+  font-family: 'JetBrains Mono Variable', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(255, 176, 32, 0.10);
+  border: 1px solid rgba(255, 176, 32, 0.25);
+  color: rgba(255, 176, 32, 0.85);
+}
+
+/* ── BUTTON HALO DRIFT & PIXEL EFFECTS ───────────────────── */
+@keyframes buttonHaloDrift {
+  0% {
+    transform: translate(-18%, -12%) scale(0.95);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translate(18%, 14%) scale(1.15);
+    opacity: 0.58;
+  }
+  100% {
+    transform: translate(-10%, 10%) scale(0.98);
+    opacity: 0.38;
+  }
+}
+
+@keyframes pixelFlickerA {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+@keyframes pixelFlickerB {
+  0%, 100% { opacity: 0.85; }
+  45% { opacity: 0.25; }
+  85% { opacity: 0.95; }
+}
+
+.button-pixels-layer {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(255, 176, 32, 0.95) 1px, transparent 1.1px),
+    radial-gradient(circle at 4px 4px, rgba(255, 106, 19, 0.9) 1px, transparent 1.1px);
+  background-size: 6px 6px;
+}
