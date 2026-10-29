@@ -1,10 +1,30 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, ArrowLeft } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 export const NotFound: React.FC = () => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    let metaRobots = document.querySelector('meta[name="robots"]') as HTMLMetaElement | null;
+    const created = !metaRobots;
+    if (!metaRobots) {
+      metaRobots = document.createElement('meta');
+      metaRobots.name = 'robots';
+      document.head.appendChild(metaRobots);
+    }
+    const prevContent = metaRobots.content;
+    metaRobots.content = 'noindex, nofollow';
+
+    return () => {
+      if (created && metaRobots) {
+        metaRobots.remove();
+      } else if (metaRobots) {
+        metaRobots.content = prevContent;
+      }
+    };
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 text-center relative z-10">

@@ -209,6 +209,62 @@ Clases en `src/styles/tokens.css`:
 
 ---
 
+## 🚀 Despliegue a Producción (Hostinger)
+
+El proyecto está preparado para desplegarse como un Single Page Application (SPA) estático en servidores Apache/cPanel de **Hostinger**.
+
+### 1. Requisitos del Entorno
+- **Node.js**: Versión `20.19+` o `22.12+` (LTS recomendada).
+- **npm**: Versión `10+`.
+- **Variables de Entorno**:
+  - Archivo `.env` (o configurar variables de entorno en el panel de CI/CD):
+    ```bash
+    VITE_FORM_ENDPOINT=https://formspree.io/f/tu-endpoint-aqui
+    ```
+  - *Nota:* Si `VITE_FORM_ENDPOINT` se deja vacío o no se define, el formulario activa automáticamente el respaldo transparente hacia WhatsApp sin emitir falsos éxitos.
+
+### 2. Comandos de Compilación
+```bash
+# 1. Instalar dependencias exactas
+npm install
+
+# 2. Validar tipos y linter
+npm run lint
+npx tsc --noEmit
+
+# 3. Compilar bundle de producción
+npm run build
+```
+
+El resultado de la compilación se genera en la carpeta `dist/`.
+
+### 3. Funcionamiento de `.htaccess` en Hostinger
+Durante el `build`, Vite copia automáticamente el archivo `public/.htaccess` a la raíz de `dist/`. Este archivo es esencial en Hostinger para:
+1. **Enrutamiento SPA (`mod_rewrite`):** Redirige todas las peticiones a rutas internas (como `/privacidad`) hacia `index.html`, evitando errores 404 de Apache al recargar o acceder directamente.
+2. **Encabezados de Seguridad (`mod_headers`):** Aplica políticas estrictas de `Content-Security-Policy` (CSP), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Strict-Transport-Security` (HSTS) y `Permissions-Policy`.
+3. **Caché Optimizado:** Establece `Cache-Control: max-age=31536000, public, immutable` para todos los assets con hash (`.js`, `.css`, fuentes, imágenes, videos) y `no-cache` para `index.html`.
+
+### 4. Checklist de Despliegue
+
+#### Pre-deploy:
+- [ ] Ejecutar `npm run build` y comprobar que no haya errores de compilación ni chunks mayores a 250 kB.
+- [ ] Verificar que `.env` contenga el endpoint de formulario definitivo (`VITE_FORM_ENDPOINT`).
+- [ ] Confirmar que `public/.htaccess` esté presente en la raíz de `dist/`.
+
+#### Deploy a Hostinger:
+1. Acceder al **Administrador de Archivos** (o cliente SFTP) en hPanel de Hostinger.
+2. Navegar a la carpeta pública del dominio: `public_html/`.
+3. Subir el **contenido** de la carpeta `dist/` (asegurarse de subir también archivos ocultos como `.htaccess`).
+
+#### Post-deploy:
+- [ ] Probar la navegación a la página principal `https://hotcompany.com/`.
+- [ ] Acceder directamente a `https://hotcompany.com/privacidad` y verificar que cargue sin error 404 de Apache.
+- [ ] Probar el formulario de contacto con datos de prueba (verificar recepción en el endpoint o redirección correcta a WhatsApp).
+- [ ] Verificar en la consola de red (DevTools) que los encabezados de seguridad (`CSP`, `HSTS`, `X-Frame-Options`) estén activos.
+- [ ] Comprobar que `https://hotcompany.com/robots.txt` y `https://hotcompany.com/sitemap.xml` respondan correctamente.
+
+---
+
 ## ⚖️ Aviso Legal
 
 - **Modelo de no intermediación**: el acuerdo, tarifas y pago se realizan directamente entre el usuario y el prestador independiente. La plataforma no interviene financieramente.
@@ -220,6 +276,7 @@ Clases en `src/styles/tokens.css`:
 
 1. [ ] **Textos finales**: aprobación de copies por el equipo comercial (buscar `// TODO:` en `constants.ts`).
 2. [ ] **Logo vectorial**: exportar SVG o PNG transparente de alta resolución para fondos claros.
-3. [ ] **Backend del formulario**: conectar `Contact.tsx` con Resend / Formspree / AWS SES.
+3. [x] **Backend del formulario**: conectado vía `VITE_FORM_ENDPOINT` con fallback automático a WhatsApp.
 4. [ ] **Analítica**: integrar Google Tag Manager / GA4 o Plausible.
-5. [ ] **Políticas legales**: redactar y enlazar Política de Privacidad y Términos de Servicio.
+5. [x] **Política de Privacidad**: redactada según Ley 1581 de 2012 y activa en `/privacidad`.
+6. [ ] **Términos y Condiciones**: redactar documento definitivo para `/terminos`.
