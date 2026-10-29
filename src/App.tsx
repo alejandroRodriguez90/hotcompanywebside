@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Lenis from 'lenis';
 import { Navbar } from './components/layout/Navbar';
@@ -7,9 +7,10 @@ import { Background } from './components/layout/Background';
 import { CustomCursor } from './components/layout/CustomCursor';
 import { Loader } from './components/layout/Loader';
 import { Home } from './pages/Home';
-import { Privacy } from './pages/Privacy';
 import { NotFound } from './pages/NotFound';
 import { useReducedMotion } from './hooks/useReducedMotion';
+
+const Privacy = lazy(() => import('./pages/Privacy'));
 
 export function App() {
   const reducedMotion = useReducedMotion();
@@ -60,7 +61,23 @@ export function App() {
         <div className="flex-grow">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/privacidad" element={<Privacy />} />
+            <Route
+              path="/privacidad"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="min-h-screen flex items-center justify-center">
+                      <div
+                        className="w-8 h-8 rounded-full border-2 border-[#FF6A13] border-t-transparent animate-spin"
+                        aria-label="Cargando política de privacidad"
+                      />
+                    </div>
+                  }
+                >
+                  <Privacy />
+                </Suspense>
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>

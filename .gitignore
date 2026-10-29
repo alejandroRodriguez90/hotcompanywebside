@@ -18,6 +18,9 @@ dist-ssr
 .env.*.local
 !.env.example
 
+# Raw unoptimized assets
+assets-source/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

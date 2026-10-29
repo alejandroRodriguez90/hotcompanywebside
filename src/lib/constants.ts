@@ -81,23 +81,10 @@ export interface HeroVideoOption {
 
 export const HERO_VIDEOS: HeroVideoOption[] = [
   {
-    id: 'hotcompani2',
-    name: 'Hot Company 2 (Principal)',
-    mp4: '/videos/HotCompani2.mp4',
-    tint: 'brand',
-  },
-  {
     id: 'hero-plexus',
-    name: 'Plexus Digital',
+    name: 'Plexus Digital (Principal)',
     mp4: '/videos/hero-plexus.mp4',
-    webm: '/videos/hero-plexus.webm',
     poster: '/videos/hero-poster.jpg',
-    tint: 'brand',
-  },
-  {
-    id: 'hotcompany-1',
-    name: 'Hot Company 1',
-    mp4: '/videos/HotCompani1.mp4',
     tint: 'brand',
   },
 ];
