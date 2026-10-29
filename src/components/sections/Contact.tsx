@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Mail, Phone, MapPin, Send, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, CheckCircle2, AlertCircle, Loader2, RotateCw } from 'lucide-react';
 import { COMPANY_INFO, CONTACT_CONTENT } from '../../lib/constants';
 import { Button } from '../ui/Button';
 import { WhatsAppIcon } from '../ui/WhatsAppIcon';
@@ -11,9 +11,10 @@ interface FormData {
   correo: string;
   telefono: string;
   mensaje: string;
+  consent: boolean;
 }
 
-type FormState = 'idle' | 'loading' | 'success';
+type FormState = 'idle' | 'loading' | 'success' | 'error' | 'whatsapp_fallback';
 
 interface FieldProps {
   id: string;
@@ -25,9 +26,21 @@ interface FieldProps {
   error?: string;
   onChange: React.ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement>;
   isTextarea?: boolean;
+  maxLength?: number;
 }
 
-const Field: React.FC<FieldProps> = ({ id, name, label, type = 'text', placeholder, value, error, onChange, isTextarea }) => {
+const Field: React.FC<FieldProps> = ({
+  id,
+  name,
+  label,
+  type = 'text',
+  placeholder,
+  value,
+  error,
+  onChange,
+  isTextarea,
+  maxLength,
+}) => {
   const hasValue = value.length > 0;
 
   const inputClass = `w-full px-4 pt-6 pb-2 rounded-2xl glass font-sans text-sm text-[#F5F1EC] placeholder-transparent focus:outline-none transition-all duration-300 ${
@@ -43,6 +56,7 @@ const Field: React.FC<FieldProps> = ({ id, name, label, type = 'text', placehold
           id={id}
           name={name}
           rows={4}
+          maxLength={maxLength}
           value={value}
           onChange={onChange}
           placeholder={placeholder}
@@ -55,6 +69,7 @@ const Field: React.FC<FieldProps> = ({ id, name, label, type = 'text', placehold
           type={type}
           id={id}
           name={name}
+          maxLength={maxLength}
           value={value}
           onChange={onChange}
           placeholder={placeholder}
@@ -85,16 +100,51 @@ const Field: React.FC<FieldProps> = ({ id, name, label, type = 'text', placehold
 
 export const Contact: React.FC = () => {
   const reducedMotion = useReducedMotion();
-  const [formData, setFormData] = useState<FormData>({ nombre: '', correo: '', telefono: '', mensaje: '' });
-  const [errors, setErrors] = useState<Partial<FormData>>({});
+  const [formData, setFormData] = useState<FormData>({
+    nombre: '',
+    correo: '',
+    telefono: '',
+    mensaje: '',
+    consent: false,
+  });
+  const [honeypot, setHoneypot] = useState('');
+  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
   const [formState, setFormState] = useState<FormState>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [fallbackWaUrl, setFallbackWaUrl] = useState('');
 
   const validate = (): boolean => {
-    const errs: Partial<FormData> = {};
-    if (!formData.nombre.trim() || formData.nombre.trim().length < 3) errs.nombre = 'Ingresa al menos 3 caracteres';
-    if (!formData.correo.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.correo)) errs.correo = 'Correo electrónico no válido';
-    if (!formData.telefono.trim() || formData.telefono.trim().length < 7) errs.telefono = 'Número telefónico no válido';
-    if (!formData.mensaje.trim() || formData.mensaje.trim().length < 10) errs.mensaje = 'Mínimo 10 caracteres';
+    const errs: Partial<Record<keyof FormData, string>> = {};
+
+    const nombreClean = formData.nombre.trim();
+    if (!nombreClean || nombreClean.length < 3) {
+      errs.nombre = 'Ingresa tu nombre completo (mínimo 3 caracteres)';
+    }
+
+    const correoClean = formData.correo.trim();
+    if (!correoClean || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correoClean)) {
+      errs.correo = 'Ingresa un correo electrónico válido';
+    }
+
+    const cleanPhone = formData.telefono.trim().replace(/[\s\-().]/g, '');
+    if (cleanPhone.length > 0) {
+      const isValidColPhone = /^(\+?57)?(3\d{9}|[1-9]\d{6,9})$/.test(cleanPhone);
+      if (!isValidColPhone) {
+        errs.telefono = 'Número colombiano no válido (ej. 350 241 8881 o 10 dígitos)';
+      }
+    }
+
+    const mensajeClean = formData.mensaje.trim();
+    if (!mensajeClean || mensajeClean.length < 10) {
+      errs.mensaje = 'Por favor escribe al menos 10 caracteres';
+    } else if (mensajeClean.length > 1000) {
+      errs.mensaje = 'El mensaje no debe exceder los 1000 caracteres';
+    }
+
+    if (!formData.consent) {
+      errs.consent = 'Debes aceptar la política de tratamiento de datos para continuar';
+    }
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -102,19 +152,93 @@ export const Contact: React.FC = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name as keyof FormData]) setErrors((prev) => ({ ...prev, [name]: undefined }));
+    if (errors[name as keyof FormData]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+
     if (!validate()) return;
 
-    setFormState('loading');
-    // TODO: Conectar con backend o servicio de mailing (Resend, Formspree, etc.)
-    setTimeout(() => {
+    // Honeypot anti-bot check: si el campo oculto tiene valor, simula envío silencioso
+    if (honeypot.trim().length > 0) {
       setFormState('success');
-      setFormData({ nombre: '', correo: '', telefono: '', mensaje: '' });
-    }, 1200);
+      return;
+    }
+
+    const endpoint = import.meta.env.VITE_FORM_ENDPOINT?.trim();
+
+    // Respaldo por WhatsApp si VITE_FORM_ENDPOINT no está configurado (sin falso éxito)
+    if (!endpoint) {
+      const telText = formData.telefono.trim() ? formData.telefono.trim() : 'No proporcionado';
+      const waMessage = `Hola HOT COMPANY S.A.S., me gustaría ponerme en contacto.\n\n*Nombre:* ${formData.nombre.trim()}\n*Correo:* ${formData.correo.trim()}\n*Teléfono:* ${telText}\n*Mensaje:* ${formData.mensaje.trim()}`;
+      const waUrl = `https://wa.me/573502418881?text=${encodeURIComponent(waMessage)}`;
+
+      setFallbackWaUrl(waUrl);
+      setFormState('whatsapp_fallback');
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    setFormState('loading');
+    setErrorMessage('');
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nombre: formData.nombre.trim(),
+          correo: formData.correo.trim(),
+          telefono: formData.telefono.trim() || 'No proporcionado',
+          mensaje: formData.mensaje.trim(),
+          consentimiento_datos: true,
+          fecha_envio: new Date().toISOString(),
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const errDetail =
+          data?.error ||
+          data?.errors?.[0]?.message ||
+          'El servicio no pudo procesar tu mensaje en este momento. Por favor reintenta o contáctanos por WhatsApp.';
+        throw new Error(errDetail);
+      }
+
+      setFormState('success');
+      setFormData({ nombre: '', correo: '', telefono: '', mensaje: '', consent: false });
+      setHoneypot('');
+    } catch (err: unknown) {
+      clearTimeout(timeoutId);
+      if (err instanceof Error && err.name === 'AbortError') {
+        setErrorMessage(
+          'La solicitud superó el límite de espera (10 segundos). Por favor reintenta o comunícate vía WhatsApp.'
+        );
+      } else if (err instanceof Error) {
+        setErrorMessage(err.message || 'Error de conexión al enviar el formulario.');
+      } else {
+        setErrorMessage('Ocurrió un error inesperado al procesar la solicitud.');
+      }
+      setFormState('error');
+    }
+  };
+
+  const getWaPrefilledUrl = () => {
+    const telText = formData.telefono.trim() ? formData.telefono.trim() : 'No proporcionado';
+    const waMessage = `Hola HOT COMPANY S.A.S., intento enviar una consulta desde la web.\n\n*Nombre:* ${formData.nombre.trim()}\n*Correo:* ${formData.correo.trim()}\n*Teléfono:* ${telText}\n*Mensaje:* ${formData.mensaje.trim()}`;
+    return `https://wa.me/573502418881?text=${encodeURIComponent(waMessage)}`;
   };
 
   return (
@@ -170,7 +294,7 @@ export const Contact: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
-          {/* ── Form ───────────────────────────────────── */}
+          {/* ── Form Card ───────────────────────────────────── */}
           <motion.div
             initial={reducedMotion ? { opacity: 1 } : { opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -178,7 +302,8 @@ export const Contact: React.FC = () => {
             transition={{ duration: 0.6 }}
             className="glass rounded-[32px] p-6 sm:p-8"
           >
-            {formState === 'success' ? (
+            {/* 1. Éxito Real con Endpoint */}
+            {formState === 'success' && (
               <div className="flex flex-col items-center text-center py-10 gap-4">
                 <motion.div
                   initial={{ scale: 0 }}
@@ -188,30 +313,224 @@ export const Contact: React.FC = () => {
                 >
                   <CheckCircle2 className="w-8 h-8 text-[#4ADE80]" strokeWidth={1.5} />
                 </motion.div>
-                <h3 className="font-display font-bold text-xl text-[#F5F1EC]">¡Mensaje recibido!</h3>
-                <p className="text-sm text-[#A89F98]">Nuestro equipo se comunicará contigo vía WhatsApp o correo a la brevedad.</p>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setFormState('idle')}
-                >
+                <h3 className="font-display font-bold text-xl text-[#F5F1EC]">¡Mensaje recibido con éxito!</h3>
+                <p className="text-sm text-[#A89F98] max-w-sm">
+                  Nuestro equipo revisará tu requerimiento y se comunicará contigo vía correo o WhatsApp a la mayor brevedad.
+                </p>
+                <Button variant="secondary" size="sm" onClick={() => setFormState('idle')}>
                   Enviar otro mensaje
                 </Button>
               </div>
-            ) : (
+            )}
+
+            {/* 2. Respaldo por WhatsApp (Sin Endpoint Falso) */}
+            {formState === 'whatsapp_fallback' && (
+              <div className="flex flex-col items-center text-center py-8 gap-4">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', damping: 12, stiffness: 200 }}
+                  className="w-16 h-16 rounded-2xl glass flex items-center justify-center"
+                  style={{ background: 'rgba(37, 211, 102, 0.15)', border: '1px solid rgba(74, 222, 128, 0.4)' }}
+                >
+                  <WhatsAppIcon size={32} className="text-[#4ADE80]" />
+                </motion.div>
+                <h3 className="font-display font-bold text-xl text-[#F5F1EC]">Conectando con WhatsApp</h3>
+                <p className="text-sm text-[#A89F98] max-w-sm leading-relaxed">
+                  Los datos de tu consulta han sido preparados para enviarse directamente a nuestro canal oficial de WhatsApp.
+                </p>
+
+                {fallbackWaUrl && (
+                  <Button
+                    as="a"
+                    href={fallbackWaUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    variant="primary"
+                    size="md"
+                    icon={<WhatsAppIcon size={18} />}
+                  >
+                    Abrir chat de WhatsApp
+                  </Button>
+                )}
+
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setFormState('idle');
+                    setFormData({ nombre: '', correo: '', telefono: '', mensaje: '', consent: false });
+                  }}
+                >
+                  Volver al formulario
+                </Button>
+              </div>
+            )}
+
+            {/* 3. Error Real con Botón de Reintento */}
+            {formState === 'error' && (
+              <div className="flex flex-col items-center text-center py-8 gap-4">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', damping: 12, stiffness: 200 }}
+                  className="w-16 h-16 rounded-2xl glass flex items-center justify-center border border-[#E10600]/40"
+                  style={{ background: 'rgba(225, 6, 0, 0.12)' }}
+                >
+                  <AlertCircle className="w-8 h-8 text-[#E10600]" strokeWidth={1.5} />
+                </motion.div>
+                <h3 className="font-display font-bold text-xl text-[#F5F1EC]">No se pudo enviar el mensaje</h3>
+                <p className="text-sm text-[#A89F98] max-w-sm leading-relaxed">
+                  {errorMessage || 'Ocurrió un problema de comunicación al procesar tu solicitud.'}
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => handleSubmit()}
+                    icon={<RotateCw className="w-3.5 h-3.5" strokeWidth={1.5} />}
+                  >
+                    Reintentar envío
+                  </Button>
+
+                  <Button
+                    as="a"
+                    href={getWaPrefilledUrl()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    variant="secondary"
+                    size="sm"
+                    icon={<WhatsAppIcon size={16} />}
+                  >
+                    Enviar por WhatsApp
+                  </Button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setFormState('idle')}
+                  className="text-xs text-[#A89F98] hover:text-[#F5F1EC] underline transition-colors pt-1"
+                >
+                  Editar los datos ingresados
+                </button>
+              </div>
+            )}
+
+            {/* 4. Formulario (Idle / Loading) */}
+            {(formState === 'idle' || formState === 'loading') && (
               <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-                <h3 className="font-display font-semibold text-lg text-[#F5F1EC] mb-2">
+                <h3 className="font-display font-semibold text-lg text-[#F5F1EC] mb-1">
                   Cuéntanos sobre tu proyecto
                 </h3>
 
-                <Field id="nombre" name="nombre" label="Nombre completo" placeholder="Carlos Mendoza" value={formData.nombre} error={errors.nombre} onChange={handleChange} />
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Field id="correo" name="correo" label="Correo electrónico" type="email" placeholder="hola@empresa.com" value={formData.correo} error={errors.correo} onChange={handleChange} />
-                  <Field id="telefono" name="telefono" label="Teléfono / WhatsApp" type="tel" placeholder="350 000 0000" value={formData.telefono} error={errors.telefono} onChange={handleChange} />
+                {/* Campo honeypot anti-bot oculto */}
+                <div className="hidden" aria-hidden="true">
+                  <label htmlFor="company_fax">Favor no completar este campo de control:</label>
+                  <input
+                    type="text"
+                    id="company_fax"
+                    name="company_fax"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={honeypot}
+                    onChange={(e) => setHoneypot(e.target.value)}
+                  />
                 </div>
 
-                <Field id="mensaje" name="mensaje" label="¿En qué podemos ayudarte?" placeholder="Cuéntanos sobre tu proyecto..." value={formData.mensaje} error={errors.mensaje} onChange={handleChange} isTextarea />
+                <Field
+                  id="nombre"
+                  name="nombre"
+                  label="Nombre completo *"
+                  placeholder="Carlos Mendoza"
+                  maxLength={100}
+                  value={formData.nombre}
+                  error={errors.nombre}
+                  onChange={handleChange}
+                />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field
+                    id="correo"
+                    name="correo"
+                    label="Correo electrónico *"
+                    type="email"
+                    placeholder="hola@empresa.com"
+                    maxLength={100}
+                    value={formData.correo}
+                    error={errors.correo}
+                    onChange={handleChange}
+                  />
+                  <Field
+                    id="telefono"
+                    name="telefono"
+                    label="Teléfono / WhatsApp (Opcional)"
+                    type="tel"
+                    placeholder="350 241 8881"
+                    maxLength={20}
+                    value={formData.telefono}
+                    error={errors.telefono}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div>
+                  <Field
+                    id="mensaje"
+                    name="mensaje"
+                    label="¿En qué podemos ayudarte? *"
+                    placeholder="Cuéntanos sobre tu proyecto..."
+                    maxLength={1000}
+                    value={formData.mensaje}
+                    error={errors.mensaje}
+                    onChange={handleChange}
+                    isTextarea
+                  />
+                  <div className="flex justify-end mt-1 px-1">
+                    <span className="font-mono text-[10px] text-[#A89F98]/50">
+                      {formData.mensaje.length}/1000
+                    </span>
+                  </div>
+                </div>
+
+                {/* Checkbox de consentimiento obligatorio (Ley 1581 de 2012) */}
+                <div className="pt-1">
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      id="consent"
+                      name="consent"
+                      checked={formData.consent}
+                      onChange={(e) => {
+                        setFormData((prev) => ({ ...prev, consent: e.target.checked }));
+                        if (errors.consent) {
+                          setErrors((prev) => ({ ...prev, consent: undefined }));
+                        }
+                      }}
+                      className="mt-1 w-4 h-4 rounded border-white/20 bg-black/40 text-[#FF6A13] focus:ring-[#FF6A13] focus:ring-offset-0 cursor-pointer accent-[#FF6A13]"
+                      aria-invalid={Boolean(errors.consent)}
+                      aria-describedby={errors.consent ? 'consent-error' : undefined}
+                    />
+                    <label htmlFor="consent" className="text-xs text-[#A89F98] leading-relaxed cursor-pointer select-none">
+                      Acepto el tratamiento de mis datos personales conforme a la{' '}
+                      <a
+                        href="/privacidad"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#FF6A13] hover:text-[#FFB020] underline transition-colors font-medium"
+                      >
+                        Política de Privacidad
+                      </a>{' '}
+                      (Ley 1581 de 2012 de Colombia).
+                    </label>
+                  </div>
+                  {errors.consent && (
+                    <p id="consent-error" role="alert" className="mt-1.5 flex items-center gap-1 text-xs text-[#E10600]">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={1.5} />
+                      {errors.consent}
+                    </p>
+                  )}
+                </div>
 
                 <Button
                   type="submit"
@@ -219,13 +538,19 @@ export const Contact: React.FC = () => {
                   size="lg"
                   isFullWidth
                   disabled={formState === 'loading'}
-                  icon={formState === 'loading' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" strokeWidth={1.5} />}
+                  icon={
+                    formState === 'loading' ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" strokeWidth={1.5} />
+                    )
+                  }
                 >
                   {formState === 'loading' ? 'Enviando...' : 'Enviar Mensaje'}
                 </Button>
 
                 <p className="text-[11px] text-center text-[#A89F98]/60">
-                  Tu información es tratada con estricta confidencialidad.
+                  Tu información se procesa bajo estándares de confidencialidad y no se comparte con terceros.
                 </p>
               </form>
             )}
@@ -245,7 +570,10 @@ export const Contact: React.FC = () => {
               className="glass-tint-warm rounded-[28px] p-6 flex items-start gap-4 group hover:scale-[1.01] transition-transform duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6A13]"
               aria-label="Hablar por WhatsApp con HOT COMPANY"
             >
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(37, 211, 102, 0.15)', border: '1px solid rgba(37,211,102,0.35)' }}>
+              <div
+                className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                style={{ background: 'rgba(37, 211, 102, 0.15)', border: '1px solid rgba(37,211,102,0.35)' }}
+              >
                 <WhatsAppIcon size={24} className="text-[#4ADE80]" />
               </div>
               <div className="flex-1">
@@ -295,7 +623,12 @@ export const Contact: React.FC = () => {
                 </div>
               </a>
 
-              <a href={COMPANY_INFO.mapsUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 group focus-visible:outline-none">
+              <a
+                href={COMPANY_INFO.mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-4 group focus-visible:outline-none"
+              >
                 <div className="w-10 h-10 rounded-xl glass-tint-warm flex items-center justify-center flex-shrink-0">
                   <MapPin className="w-5 h-5 text-[#FFB020]" strokeWidth={1.5} />
                 </div>

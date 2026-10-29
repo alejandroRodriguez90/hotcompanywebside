@@ -7,6 +7,7 @@ import { Background } from './components/layout/Background';
 import { CustomCursor } from './components/layout/CustomCursor';
 import { Loader } from './components/layout/Loader';
 import { Home } from './pages/Home';
+import { Privacy } from './pages/Privacy';
 import { NotFound } from './pages/NotFound';
 import { useReducedMotion } from './hooks/useReducedMotion';
 
@@ -59,6 +60,7 @@ export function App() {
         <div className="flex-grow">
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/privacidad" element={<Privacy />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>

@@ -269,7 +269,7 @@ export const FOOTER_LINKS = {
   legal: [
     // TODO: Crear y enlazar documentos legales definitivos
     { label: 'Aviso Legal y +18', href: '#aviso-legal' },
-    { label: 'Política de Privacidad', href: '#politica-privacidad' },
+    { label: 'Política de Privacidad', href: '/privacidad' },
     { label: 'Términos y Condiciones', href: '#terminos' },
   ],
 };

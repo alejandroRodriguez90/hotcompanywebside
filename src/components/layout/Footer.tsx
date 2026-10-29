@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { ArrowUp, Mail, Phone, MapPin, ShieldCheck } from 'lucide-react';
 import { COMPANY_INFO, FOOTER_LINKS } from '../../lib/constants';
 import { Button } from '../ui/Button';
@@ -65,13 +66,16 @@ export const Footer: React.FC = () => {
               Plataforma
             </h4>
             <ul className="flex flex-col gap-2.5">
-              {FOOTER_LINKS.plataforma.map((link) => (
-                <li key={link.href}>
-                  <a href={link.href} className="font-sans text-sm text-[#A89F98] hover:text-[#FFB020] transition-colors">
-                    {link.label}
-                  </a>
-                </li>
-              ))}
+              {FOOTER_LINKS.plataforma.map((link) => {
+                const targetHref = link.href.startsWith('#') ? `/${link.href}` : link.href;
+                return (
+                  <li key={link.href}>
+                    <a href={targetHref} className="font-sans text-sm text-[#A89F98] hover:text-[#FFB020] transition-colors">
+                      {link.label}
+                    </a>
+                  </li>
+                );
+              })}
             </ul>
           </div>
 
@@ -93,9 +97,15 @@ export const Footer: React.FC = () => {
             <ul className="flex flex-col gap-2">
               {FOOTER_LINKS.legal.map((link) => (
                 <li key={link.href}>
-                  <a href={link.href} className="font-sans text-xs text-[#A89F98]/80 hover:text-white transition-colors">
-                    {link.label}
-                  </a>
+                  {link.href.startsWith('/') ? (
+                    <Link to={link.href} className="font-sans text-xs text-[#A89F98]/80 hover:text-white transition-colors">
+                      {link.label}
+                    </Link>
+                  ) : (
+                    <a href={link.href} className="font-sans text-xs text-[#A89F98]/80 hover:text-white transition-colors">
+                      {link.label}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>

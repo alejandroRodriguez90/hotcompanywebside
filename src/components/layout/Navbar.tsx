@@ -12,6 +12,10 @@ export const Navbar: React.FC = () => {
 
   const handleLinkClick = (href: string) => {
     setMobileMenuOpen(false);
+    if (window.location.pathname !== '/') {
+      window.location.href = `/${href}`;
+      return;
+    }
     setTimeout(() => {
       const target = document.querySelector(href);
       if (target) target.scrollIntoView({ behavior: 'smooth' });
