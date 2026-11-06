@@ -1,5 +1,5 @@
 import { useEffect, Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Lenis from 'lenis';
 import { Navbar } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
@@ -11,6 +11,7 @@ import { NotFound } from './pages/NotFound';
 import { useReducedMotion } from './hooks/useReducedMotion';
 
 const Privacy = lazy(() => import('./pages/Privacy'));
+const Terms = lazy(() => import('./pages/Terms'));
 
 export function App() {
   const reducedMotion = useReducedMotion();
@@ -77,6 +78,27 @@ export function App() {
                   <Privacy />
                 </Suspense>
               }
+            />
+            <Route
+              path="/terminos"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="min-h-screen flex items-center justify-center">
+                      <div
+                        className="w-8 h-8 rounded-full border-2 border-[#FF6A13] border-t-transparent animate-spin"
+                        aria-label="Cargando términos y condiciones"
+                      />
+                    </div>
+                  }
+                >
+                  <Terms />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/terminos-y-condiciones"
+              element={<Navigate to="/terminos" replace />}
             />
             <Route path="*" element={<NotFound />} />
           </Routes>
