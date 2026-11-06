@@ -77,7 +77,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, index, reducedMotion
           <span
             className="font-display font-black"
             style={{
-              fontSize: 'clamp(3.5rem, 6vw, 6rem)',
+              fontSize: 'clamp(3rem, 5vw, 5.25rem)',
               lineHeight: 0.85,
               WebkitTextStroke: '1px rgba(255,255,255,0.09)',
               color: 'transparent',
@@ -90,7 +90,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, index, reducedMotion
           <span
             className="absolute inset-0 font-display font-black opacity-0 group-hover:opacity-100 transition-opacity duration-500"
             style={{
-              fontSize: 'clamp(3.5rem, 6vw, 6rem)',
+              fontSize: 'clamp(3rem, 5vw, 5.25rem)',
               lineHeight: 0.85,
               background: 'linear-gradient(145deg, #E10600, #FFB020)',
               WebkitBackgroundClip: 'text',
@@ -103,7 +103,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, index, reducedMotion
       </div>
 
       {/* ── Bottom content: anchored to bottom ── */}
-      <div className="flex flex-col gap-2 mt-4">
+      <div className="flex flex-col gap-2 mt-3 sm:mt-4">
         <p className="font-mono text-[10px] text-[#FF6A13] uppercase tracking-widest leading-none">
           {service.tagline}
         </p>
@@ -116,7 +116,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, index, reducedMotion
           {service.title}
         </h3>
 
-        <p className="font-sans text-sm text-[#A89F98] leading-relaxed line-clamp-6 w-[90%]">
+        <p className="font-sans text-sm text-[#A89F98] leading-relaxed line-clamp-6 w-full lg:max-w-[95%]">
           {service.description}
         </p>
 
@@ -193,25 +193,22 @@ export const Services: React.FC = () => {
           Row height: clamp(260px, 32svh, 340px) → fits in ~100svh with header
         */}
         <div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-5"
-          style={{
-            gridTemplateRows: 'repeat(2, clamp(260px, 32svh, 340px))',
-          }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-5 lg:[grid-template-rows:repeat(2,minmax(clamp(300px,32svh,380px),auto))]"
         >
           {/* 01 – row 1, cols 1-7 */}
-          <div className="lg:col-span-7">
+          <div className="lg:col-span-7 h-full">
             <ServiceCard service={SERVICES[0]} index={0} reducedMotion={reducedMotion} />
           </div>
           {/* 02 – row 1, cols 8-12 */}
-          <div className="lg:col-span-5">
+          <div className="lg:col-span-5 h-full">
             <ServiceCard service={SERVICES[1]} index={1} reducedMotion={reducedMotion} />
           </div>
           {/* 03 – row 2, cols 1-5 */}
-          <div className="lg:col-span-5">
+          <div className="lg:col-span-5 h-full">
             <ServiceCard service={SERVICES[2]} index={2} reducedMotion={reducedMotion} />
           </div>
           {/* 04 – row 2, cols 6-12 */}
-          <div className="lg:col-span-7">
+          <div className="lg:col-span-7 h-full">
             <ServiceCard service={SERVICES[3]} index={3} reducedMotion={reducedMotion} />
           </div>
         </div>
