@@ -47,7 +47,7 @@ export const COMPANY_INFO = {
   address: 'Calle 6 # 68-45, Bogotá D. C.',
   mapsUrl: 'https://maps.google.com/?q=Calle+6+%23+68-45,+Bogotá',
   city: 'Bogotá D. C., Colombia',
-  email: 'hotcompanyapp@gmail.com',
+  email: 'soporte@hotcompanyweb.com',
   phone: '312 661 1763',
   phoneDisplay: '+57 312 661 1763',
   phoneTel: '+573126611763',
@@ -74,6 +74,7 @@ export const NAV_LINKS: NavLink[] = [
 ];
 
 export const HERO_CONTENT = {
+  // TODO: aprobación del equipo
   tag: 'Plataforma privada · Red verificada',
   titleHighlight: 'Conectamos personas,',
   titleRest: 'generamos oportunidades.',
@@ -84,6 +85,7 @@ export const HERO_CONTENT = {
   ctaWorkerUrl: `https://wa.me/573126611763?text=${WHATSAPP_WORKER_MSG}`,
   ctaHotel: 'Soy Hotel',
   ctaHotelUrl: `https://wa.me/573126611763?text=${WHATSAPP_HOTEL_MSG}`,
+  // TODO: aprobación del equipo
   badge: 'Perfiles verificados · Hoteles aliados · Entorno seguro',
 };
 
@@ -154,6 +156,7 @@ export const CAROUSEL_SLIDES: CarouselSlideData[] = [
     alt: 'Entorno privado con filtros de seguridad y confidencialidad activa',
     title: 'Entorno Seguro',
     subtitle: 'Privacidad y control',
+    // TODO: aprobación del equipo
     description: 'Filtros de seguridad activos y reserva interna protegida bajo estrictos estándares de confidencialidad.',
   },
   {
@@ -161,6 +164,7 @@ export const CAROUSEL_SLIDES: CarouselSlideData[] = [
     src: '/images/carousel/HC5.webp',
     alt: 'Perfil independiente worker con respaldo operativo y solicitudes filtradas',
     title: 'Perfil Independiente',
+    // TODO: aprobación del equipo
     subtitle: 'Workers verificados',
     description: 'Gestión con total respaldo: acceso a solicitudes exclusivas de usuarios autenticados y acuerdo directo.',
   },
@@ -225,6 +229,7 @@ export const SERVICES: ServiceCard[] = [
 
 export const MARQUEE_ITEMS = [
   { label: 'Flujo Constante de Reservas Internas', icon: 'Repeat' },
+  // TODO: aprobación del equipo
   { label: 'Perfiles Previamente Verificados', icon: 'BadgeCheck' },
   { label: 'Integra Nuestra Comunidad', icon: 'Users' },
   { label: 'Posicionamiento Dentro de la App', icon: 'MapPin' },
@@ -250,6 +255,7 @@ export const HOW_IT_WORKS_CONTENT = {
     {
       step: '02',
       title: 'Acceso privado y gestión',
+      // TODO: aprobación del equipo
       description:
         'Ingresa al ecosistema de la app para publicar tu disponibilidad o explorar perfiles verificados. Administra tu agenda organizada, tarifas e interacciones con total confidencialidad.',
       highlight: 'Agenda y tarifas centralizadas.',
@@ -279,7 +285,6 @@ export const FOOTER_LINKS = {
     { label: 'Servicios', href: '#servicios' },
     { label: 'Cómo funciona', href: '#como-funciona' },
     { label: 'Contacto', href: '#contacto' },
-    { label: 'Desarrollo', href: '/desarrollo/' },
   ],
   legal: [
     { label: 'Política de Privacidad', href: '/privacidad' },

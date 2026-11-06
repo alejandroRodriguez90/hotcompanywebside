@@ -130,7 +130,7 @@ export const Contact: React.FC = () => {
     if (cleanPhone.length > 0) {
       const isValidColPhone = /^(\+?57)?(3\d{9}|[1-9]\d{6,9})$/.test(cleanPhone);
       if (!isValidColPhone) {
-        errs.telefono = 'Número colombiano no válido (ej. 350 241 8881 o 10 dígitos)';
+        errs.telefono = `Número colombiano no válido (ej. ${COMPANY_INFO.phoneDisplay} o 10 dígitos)`;
       }
     }
 
@@ -174,7 +174,7 @@ export const Contact: React.FC = () => {
     if (!endpoint) {
       const telText = formData.telefono.trim() ? formData.telefono.trim() : 'No proporcionado';
       const waMessage = `Hola HOT COMPANY S.A.S., me gustaría ponerme en contacto.\n\n*Nombre:* ${formData.nombre.trim()}\n*Correo:* ${formData.correo.trim()}\n*Teléfono:* ${telText}\n*Mensaje:* ${formData.mensaje.trim()}`;
-      const waUrl = `https://wa.me/573502418881?text=${encodeURIComponent(waMessage)}`;
+      const waUrl = `https://wa.me/${COMPANY_INFO.whatsappNumber}?text=${encodeURIComponent(waMessage)}`;
 
       setFallbackWaUrl(waUrl);
       setFormState('whatsapp_fallback');
@@ -238,7 +238,7 @@ export const Contact: React.FC = () => {
   const getWaPrefilledUrl = () => {
     const telText = formData.telefono.trim() ? formData.telefono.trim() : 'No proporcionado';
     const waMessage = `Hola HOT COMPANY S.A.S., intento enviar una consulta desde la web.\n\n*Nombre:* ${formData.nombre.trim()}\n*Correo:* ${formData.correo.trim()}\n*Teléfono:* ${telText}\n*Mensaje:* ${formData.mensaje.trim()}`;
-    return `https://wa.me/573502418881?text=${encodeURIComponent(waMessage)}`;
+    return `https://wa.me/${COMPANY_INFO.whatsappNumber}?text=${encodeURIComponent(waMessage)}`;
   };
 
   return (
@@ -466,7 +466,7 @@ export const Contact: React.FC = () => {
                     name="telefono"
                     label="Teléfono / WhatsApp (Opcional)"
                     type="tel"
-                    placeholder="350 241 8881"
+                    placeholder={COMPANY_INFO.phoneDisplay}
                     maxLength={20}
                     value={formData.telefono}
                     error={errors.telefono}
@@ -479,7 +479,7 @@ export const Contact: React.FC = () => {
                     id="mensaje"
                     name="mensaje"
                     label="¿En qué podemos ayudarte? *"
-                    placeholder="Cuéntanos sobre tu proyecto..."
+                    placeholder="Cuéntanos si eres usuario, worker independiente o representas a un hotel aliado..."
                     maxLength={1000}
                     value={formData.mensaje}
                     error={errors.mensaje}
@@ -550,7 +550,7 @@ export const Contact: React.FC = () => {
                 </Button>
 
                 <p className="text-[11px] text-center text-[#A89F98]/60">
-                  Tu información se procesa bajo estándares de confidencialidad y no se comparte con terceros.
+                  Tratamos tus datos conforme a nuestra Política de Privacidad.
                 </p>
               </form>
             )}

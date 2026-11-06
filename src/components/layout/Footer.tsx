@@ -117,7 +117,7 @@ export const Footer: React.FC = () => {
 
         {/* Bottom bar */}
         <div className="pt-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-[#A89F98]/70">
-          <span>© {currentYear} {COMPANY_INFO.name} · Todos los derechos reservados</span>
+          <span>© {currentYear} {COMPANY_INFO.name} · Todos los derechos reservados · <a href="/desarrollo/" aria-label="Ir a la landing de diseño y desarrollo" className="hover:text-[#FFB020] transition-colors">Diseño y Desarrollo</a></span>
           <Button
             onClick={scrollToTop}
             aria-label="Volver arriba"

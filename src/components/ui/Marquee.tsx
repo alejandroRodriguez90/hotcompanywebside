@@ -1,20 +1,19 @@
 import React, { useRef, useEffect } from 'react';
 import {
-  Code2, Globe, Megaphone, ShoppingCart, Smartphone, Monitor, Palette, Zap,
+  Repeat, BadgeCheck, Users, MapPin, TrendingUp, ShieldCheck,
+  type LucideIcon,
 } from 'lucide-react';
+import { MARQUEE_ITEMS } from '../../lib/constants';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 
-const ITEMS = [
-  { label: 'Diseño Web', Icon: Palette },
-  { label: 'Apps iOS', Icon: Smartphone },
-  { label: 'Software a Medida', Icon: Code2 },
-  { label: 'Portales Digitales', Icon: Globe },
-  { label: 'Apps Android', Icon: Smartphone },
-  { label: 'Marketing Digital', Icon: Megaphone },
-  { label: 'E-commerce', Icon: ShoppingCart },
-  { label: 'Sistemas', Icon: Monitor },
-  { label: 'Innovación', Icon: Zap },
-];
+const ICON_MAP: Record<string, LucideIcon> = {
+  Repeat,
+  BadgeCheck,
+  Users,
+  MapPin,
+  TrendingUp,
+  ShieldCheck,
+};
 
 /**
  * Marquee — franja plana, CSS translateX loop, 15 s/vuelta.
@@ -43,7 +42,7 @@ export const Marquee: React.FC = () => {
   }, [reducedMotion]);
 
   // Duplicate for seamless loop
-  const items = [...ITEMS, ...ITEMS];
+  const items = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS];
 
   return (
     <div
@@ -68,23 +67,26 @@ export const Marquee: React.FC = () => {
           if (trackRef.current) trackRef.current.style.animationPlayState = 'running';
         }}
       >
-        {items.map(({ label, Icon }, i) => {
+        {items.map((item, i) => {
           const isOutline = i % 2 === 1; // alternating fill / outline style
+          const Icon = ICON_MAP[item.icon];
           return (
-            <React.Fragment key={`${label}-${i}`}>
+            <React.Fragment key={`${item.label}-${i}`}>
               {/* Item */}
-              <div className="flex items-center gap-2 px-4 flex-shrink-0 group cursor-default">
-                <Icon
-                  className={`w-4 h-4 flex-shrink-0 transition-colors duration-200 ${
-                    isOutline
-                      ? 'text-[#A89F98] group-hover:text-[#FF6A13]'
-                      : 'text-[#FF6A13] group-hover:text-[#FFB020]'
-                  }`}
-                  strokeWidth={1.5}
-                  aria-hidden="true"
-                />
+              <div className="flex items-center gap-2 px-5 flex-shrink-0 group cursor-default">
+                {Icon && (
+                  <Icon
+                    className={`w-4 h-4 flex-shrink-0 transition-colors duration-200 ${
+                      isOutline
+                        ? 'text-[#A89F98] group-hover:text-[#FF6A13]'
+                        : 'text-[#FF6A13] group-hover:text-[#FFB020]'
+                    }`}
+                    strokeWidth={1.5}
+                    aria-hidden="true"
+                  />
+                )}
                 <span
-                  className="font-display text-[11px] uppercase tracking-[0.18em] whitespace-nowrap transition-colors duration-200 select-none"
+                  className="font-display text-[10px] uppercase tracking-[0.14em] whitespace-nowrap transition-colors duration-200 select-none"
                   style={
                     isOutline
                       ? {
@@ -96,7 +98,7 @@ export const Marquee: React.FC = () => {
                         }
                   }
                 >
-                  {label}
+                  {item.label}
                 </span>
               </div>
 
