@@ -73,6 +73,8 @@ export const HeroVideo: React.FC<HeroVideoProps> = ({ containerRef }) => {
 
   const shouldDisableVideo = reducedMotion || isDataSaver;
 
+  const isTintNone = selectedVideo.tint === 'none';
+
   return (
     <div
       ref={wrapperRef}
@@ -91,11 +93,11 @@ export const HeroVideo: React.FC<HeroVideoProps> = ({ containerRef }) => {
           <img
             src={selectedVideo.poster || '/videos/hero-poster.jpg'}
             alt=""
-            className="w-full h-full object-cover opacity-35 sm:opacity-55"
+            className={isTintNone ? 'w-full h-full object-cover opacity-75 sm:opacity-90' : 'w-full h-full object-cover opacity-35 sm:opacity-55'}
             style={
-              selectedVideo.tint !== 'none'
-                ? { filter: 'sepia(80%) saturate(320%) hue-rotate(345deg) brightness(0.85)' }
-                : {}
+              isTintNone
+                ? { filter: 'brightness(1.08) contrast(1.06) saturate(1.1)' }
+                : { filter: 'sepia(80%) saturate(320%) hue-rotate(345deg) brightness(0.85)' }
             }
           />
         ) : (
@@ -108,11 +110,11 @@ export const HeroVideo: React.FC<HeroVideoProps> = ({ containerRef }) => {
             playsInline
             preload="metadata"
             poster={selectedVideo.poster || '/videos/hero-poster.jpg'}
-            className="w-full h-full object-cover opacity-35 sm:opacity-55"
+            className={isTintNone ? 'w-full h-full object-cover opacity-75 sm:opacity-90' : 'w-full h-full object-cover opacity-35 sm:opacity-55'}
             style={
-              selectedVideo.tint !== 'none'
-                ? { filter: 'sepia(80%) saturate(340%) hue-rotate(345deg) brightness(0.9)' }
-                : {}
+              isTintNone
+                ? { filter: 'brightness(1.08) contrast(1.06) saturate(1.1)' }
+                : { filter: 'sepia(80%) saturate(340%) hue-rotate(345deg) brightness(0.9)' }
             }
           >
             {selectedVideo.webm && <source src={selectedVideo.webm} type="video/webm" />}
@@ -121,7 +123,7 @@ export const HeroVideo: React.FC<HeroVideoProps> = ({ containerRef }) => {
         )}
 
         {/* Capa de tinte cálido complementaria para fundir tonos fríos a la paleta naranja/rojo */}
-        {selectedVideo.tint !== 'none' && (
+        {!isTintNone && (
           <div
             className="absolute inset-0 mix-blend-color opacity-60 pointer-events-none"
             style={{
@@ -134,8 +136,9 @@ export const HeroVideo: React.FC<HeroVideoProps> = ({ containerRef }) => {
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background:
-              'radial-gradient(ellipse 80% 60% at 50% 30%, rgba(10,10,11,0.3) 0%, rgba(10,10,11,0.75) 75%, #0A0A0B 100%), linear-gradient(to bottom, rgba(10,10,11,0.2) 0%, rgba(10,10,11,0.8) 85%, #0A0A0B 100%)',
+            background: isTintNone
+              ? 'linear-gradient(to right, rgba(10,10,11,0.72) 0%, rgba(10,10,11,0.45) 35%, transparent 55%), linear-gradient(to bottom, rgba(10,10,11,0.15) 0%, rgba(10,10,11,0.7) 80%, #0A0A0B 100%)'
+              : 'radial-gradient(ellipse 80% 60% at 50% 30%, rgba(10,10,11,0.3) 0%, rgba(10,10,11,0.75) 75%, #0A0A0B 100%), linear-gradient(to bottom, rgba(10,10,11,0.2) 0%, rgba(10,10,11,0.8) 85%, #0A0A0B 100%)',
           }}
         />
       </motion.div>

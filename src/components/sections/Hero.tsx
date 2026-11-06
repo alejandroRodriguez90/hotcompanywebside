@@ -1,21 +1,15 @@
 import React, { useRef } from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
-import { HERO_CONTENT, COMPANY_INFO } from '../../lib/constants';
+import { HERO_CONTENT } from '../../lib/constants';
 import { Carousel } from './Carousel';
 import { Button } from '../ui/Button';
 import { HeroVideo } from './HeroVideo';
-import { WhatsAppIcon } from '../ui/WhatsAppIcon';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 export const Hero: React.FC = () => {
   const reducedMotion = useReducedMotion();
   const sectionRef = useRef<HTMLElement>(null);
-
-  const scrollTo = (id: string) => {
-    const el = document.querySelector(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
-  };
 
   return (
     <section
@@ -37,14 +31,15 @@ export const Hero: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-[5fr_7fr] gap-12 lg:gap-8 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] gap-12 lg:gap-12 items-center">
 
           {/* ── Left: Copy ────────────────────────────────── */}
           <motion.div
             initial={reducedMotion ? { opacity: 1 } : { opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col items-center text-center lg:items-start lg:text-left"
+            className="flex flex-col items-center text-center lg:items-start lg:text-left min-w-0"
+            style={{ maxWidth: '92%' }}
           >
             {/* Tag */}
             <div className="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 mb-6">
@@ -55,40 +50,42 @@ export const Hero: React.FC = () => {
             </div>
 
             {/* Headline */}
-            <h1 className="font-display font-extrabold tracking-tight leading-[1.1] mb-5"
-              style={{ fontSize: 'clamp(2.2rem, 5vw + 1rem, 4.5rem)' }}
+            <h1 className="font-display font-extrabold tracking-tight mb-5"
+              style={{ fontSize: 'clamp(2rem, 3.4vw + 0.5rem, 3.6rem)', lineHeight: 1.08, overflowWrap: 'break-word' }}
             >
               <span className="block text-gradient">{HERO_CONTENT.titleHighlight}</span>
               <span className="block text-[#F5F1EC]">{HERO_CONTENT.titleRest}</span>
             </h1>
 
             {/* Subtitle */}
-            <p className="font-sans text-base sm:text-lg text-[#A89F98] leading-relaxed mb-8 max-w-xl">
+            <p className="font-sans text-base text-[#A89F98] leading-relaxed mb-8 max-w-[34rem]">
               {HERO_CONTENT.subtitle}
             </p>
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-center gap-4 mb-8 w-full sm:w-auto">
               <Button
+                as="a"
+                href={HERO_CONTENT.ctaWorkerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 variant="primary"
                 size="lg"
-                onClick={() => scrollTo('#servicios')}
                 icon={<ArrowRight className="w-4 h-4" strokeWidth={1.5} />}
               >
-                {HERO_CONTENT.ctaPrimary}
+                {HERO_CONTENT.ctaWorker}
               </Button>
 
               <Button
                 as="a"
-                href={COMPANY_INFO.whatsappUrl}
+                href={HERO_CONTENT.ctaHotelUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 variant="secondary"
                 size="lg"
-                icon={<WhatsAppIcon size={18} className="text-[#4ADE80]" />}
-                iconPosition="left"
+                icon={<ArrowRight className="w-4 h-4" strokeWidth={1.5} />}
               >
-                {HERO_CONTENT.ctaWhatsApp}
+                {HERO_CONTENT.ctaHotel}
               </Button>
             </div>
 
@@ -106,7 +103,7 @@ export const Hero: React.FC = () => {
             initial={reducedMotion ? { opacity: 1 } : { opacity: 0, scale: 0.94 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.9, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full"
+            className="w-full lg:max-w-[92%] xl:max-w-full lg:ml-auto"
           >
             <Carousel />
           </motion.div>
