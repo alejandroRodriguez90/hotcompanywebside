@@ -40,7 +40,7 @@ export const Footer: React.FC = () => {
             </div>
 
             <p className="font-sans text-sm text-[#A89F98] leading-relaxed max-w-sm mb-6">
-              Desarrollo de software, plataformas digitales, publicidad y comercio electrónico para empresas en Colombia.
+              Plataforma privada y tecnología digital para conectar usuarios, prestadores independientes y hoteles aliados bajo un entorno seguro y confiable en Colombia.
             </p>
 
             <div className="flex flex-col gap-2.5 text-xs text-[#A89F98]">
@@ -87,7 +87,10 @@ export const Footer: React.FC = () => {
             </h4>
 
             {/* No-intermediation notice */}
-            <div className="glass rounded-xl p-3.5 mb-4">
+            <div id="aviso-legal" className="glass rounded-xl p-3.5 mb-4">
+              <p className="font-sans text-[11px] text-[#A89F98] leading-relaxed mb-2">
+                Plataforma dirigida exclusivamente a mayores de 18 años.
+              </p>
               <p className="font-sans text-[11px] text-[#A89F98] leading-relaxed">
                 <span className="text-[#FFB020] font-semibold">Aviso:</span> El acuerdo y pago se realizan
                 directamente entre las partes. La plataforma no intermedia en cobros.
@@ -110,14 +113,6 @@ export const Footer: React.FC = () => {
               ))}
             </ul>
           </div>
-        </div>
-
-        {/* CIIU legal line */}
-        <div className="py-5 border-b border-white/[0.05]">
-          <p className="font-mono text-[10px] text-[#A89F98]/70 leading-relaxed">
-            <span className="text-[#A89F98] font-semibold mr-1">Actividades CIIU:</span>
-            {COMPANY_INFO.ciiu.map((c) => `${c.code} ${c.desc}`).join(' · ')}
-          </p>
         </div>
 
         {/* Bottom bar */}

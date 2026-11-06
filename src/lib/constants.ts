@@ -29,17 +29,33 @@ export interface HowItWorksStep {
   highlight: string;
 }
 
+// Mensajes predeterminados para WhatsApp por perfil
+const WHATSAPP_WORKER_MSG = encodeURIComponent(
+  'Hola, soy Worker y quiero información sobre la aplicación. Deseo hacer parte de la plataforma.'
+);
+const WHATSAPP_HOTEL_MSG = encodeURIComponent(
+  'Hola, soy Hotel y quiero información sobre la aplicación para vincular mi establecimiento como hotel aliado.'
+);
+
+export const SITE_URL = 'https://www.hotcompanyweb.com';
+
 export const COMPANY_INFO = {
   name: 'HOT COMPANY S.A.S.',
   nit: '901.188.234-2',
+  siteUrl: SITE_URL,
+  // TODO: WhatsApp Business muestra "Cl. 6 Sur # 73B-68, Kennedy"; confirmar cuál es la dirección a publicar (legal vs comercial).
   address: 'Calle 6 # 68-45, Bogotá D. C.',
   mapsUrl: 'https://maps.google.com/?q=Calle+6+%23+68-45,+Bogotá',
   city: 'Bogotá D. C., Colombia',
   email: 'hotcompanyapp@gmail.com',
-  phone: '350 241 8881',
-  phoneDisplay: '+57 350 241 8881',
-  phoneHref: 'tel:+573502418881',
-  whatsappUrl: 'https://wa.me/573502418881?text=Hola%2C%20me%20interesa%20conocer%20m%C3%A1s%20sobre%20los%20servicios%20de%20Hot%20Company%20S.A.S.',
+  phone: '312 661 1763',
+  phoneDisplay: '+57 312 661 1763',
+  phoneTel: '+573126611763',
+  phoneHref: 'tel:+573126611763',
+  whatsappNumber: '573126611763',
+  whatsappUrl: 'https://wa.me/573126611763?text=Hola%2C%20me%20interesa%20conocer%20m%C3%A1s%20sobre%20los%20servicios%20de%20Hot%20Company%20S.A.S.',
+  whatsappUrlWorker: `https://wa.me/573126611763?text=${WHATSAPP_WORKER_MSG}`,
+  whatsappUrlHotel: `https://wa.me/573126611763?text=${WHATSAPP_HOTEL_MSG}`,
   ciiu: [
     { code: '6201', desc: 'Desarrollo de sistemas informáticos' },
     { code: '6312', desc: 'Portales web' },
@@ -58,15 +74,17 @@ export const NAV_LINKS: NavLink[] = [
 ];
 
 export const HERO_CONTENT = {
-  tag: 'INNOVACIÓN DIGITAL COLOMBIANA',
-  // TODO: Revisar frase de impacto con el equipo comercial
-  titleHighlight: 'Tecnología,',
-  titleRest: 'presencia y conexión.',
+  tag: 'Plataforma privada · Red verificada',
+  titleHighlight: 'Conectamos personas,',
+  titleRest: 'generamos oportunidades.',
+  // TODO: confirmar formulación de validación de identidad y entorno privado con el equipo técnico/legal.
   subtitle:
-    'Desarrollamos software, operamos plataformas digitales, gestionamos publicidad y habilitamos comercio electrónico para empresas que quieren crecer en el entorno digital.',
-  ctaPrimary: 'Servicios',
-  ctaWhatsApp: 'Hablar por WhatsApp',
-  badge: 'Acuerdo y pago directo entre las partes',
+    'Una plataforma privada que integra acompañamiento profesional y hoteles aliados verificados en un entorno seguro, discreto y organizado.',
+  ctaWorker: 'Soy Worker',
+  ctaWorkerUrl: `https://wa.me/573126611763?text=${WHATSAPP_WORKER_MSG}`,
+  ctaHotel: 'Soy Hotel',
+  ctaHotelUrl: `https://wa.me/573126611763?text=${WHATSAPP_HOTEL_MSG}`,
+  badge: 'Perfiles verificados · Hoteles aliados · Entorno seguro',
 };
 
 export interface HeroVideoOption {
@@ -81,8 +99,15 @@ export interface HeroVideoOption {
 
 export const HERO_VIDEOS: HeroVideoOption[] = [
   {
+    id: 'hc1',
+    name: 'Hot Company (Principal)',
+    mp4: '/videos/hero-hc1.mp4',
+    poster: '/videos/hero-hc1-poster.jpg',
+    tint: 'none',
+  },
+  {
     id: 'hero-plexus',
-    name: 'Plexus Digital (Principal)',
+    name: 'Plexus Digital',
     mp4: '/videos/hero-plexus.mp4',
     poster: '/videos/hero-poster.jpg',
     tint: 'brand',
@@ -102,50 +127,50 @@ export const CAROUSEL_SLIDES: CarouselSlideData[] = [
   {
     id: 'hc1',
     src: '/images/carousel/HC1.webp',
-    alt: 'Monitores curvos con gráficos de control y operadores en centro de operaciones digitales',
-    title: 'Centro de Control Digital',
-    subtitle: 'Monitoreo y métricas en tiempo real',
-    description: 'Supervisión y control de plataformas, flujos y arquitectura de sistemas de misión crítica.',
+    alt: 'Verificación de identidad y perfiles autenticados en la plataforma',
+    title: 'Verificación de Identidad',
+    subtitle: 'Autenticación digital',
+    description: 'Protocolo de validación de identidad digital para garantizar interacciones seguras y confiables.',
   },
   {
     id: 'hc2',
     src: '/images/carousel/HC2.webp',
-    alt: 'Smartphone con interfaz de tarjetas flotantes y catálogo multimedia digital',
-    title: 'Ecosistema Móvil y Portales',
-    subtitle: 'Catálogos interactivos y servicios',
-    description: 'Plataforma con tarjetas flotantes interactivas para navegación fluida y multimedia.',
+    alt: 'Agenda organizada y gestión de disponibilidad en la app móvil',
+    title: 'Agenda Organizada',
+    subtitle: 'Gestión centralizada',
+    description: 'Administra disponibilidad, solicitudes y tarifas en tiempo real desde una interfaz ágil y moderna.',
   },
   {
     id: 'hc3',
     src: '/images/carousel/HC3.webp',
-    alt: 'Pantalla de cristal con partículas lumínicas y listado de contactos digitales',
-    title: 'Red de Contacto Directo',
-    subtitle: 'Conexión transparente de servicios',
-    description: 'Ecosistema de intermediación donde el acuerdo y contacto se realiza de forma directa.',
+    alt: 'Mapa interactivo con hoteles aliados y hospedajes certificados',
+    title: 'Hoteles Aliados',
+    subtitle: 'Red de hospedajes',
+    description: 'Establecimientos certificados integrados en el mapa de la app para coordinar encuentros con discreción.',
   },
   {
     id: 'hc4',
     src: '/images/carousel/HC4.webp',
-    alt: 'Interacción táctil en interfaz móvil con publicaciones y contenidos',
-    title: 'Plataforma de Publicación',
-    subtitle: 'Gestión y difusión de contenidos',
-    description: 'Espacios interactivos para que anunciantes y prestadores promuevan sus ofertas.',
+    alt: 'Entorno privado con filtros de seguridad y confidencialidad activa',
+    title: 'Entorno Seguro',
+    subtitle: 'Privacidad y control',
+    description: 'Filtros de seguridad activos y reserva interna protegida bajo estrictos estándares de confidencialidad.',
   },
   {
     id: 'hc5',
     src: '/images/carousel/HC5.webp',
-    alt: 'Desarrollador probando aplicación móvil frente a laptop con editor de código',
-    title: 'Ingeniería y Código Fuente',
-    subtitle: 'Desarrollo robusto multiplataforma',
-    description: 'Arquitectura técnica de software, pruebas en dispositivos reales e integración continua.',
+    alt: 'Perfil independiente worker con respaldo operativo y solicitudes filtradas',
+    title: 'Perfil Independiente',
+    subtitle: 'Workers verificados',
+    description: 'Gestión con total respaldo: acceso a solicitudes exclusivas de usuarios autenticados y acuerdo directo.',
   },
   {
     id: 'hc6',
     src: '/images/carousel/HC6.webp',
-    alt: 'Smartphone con diagrama de arquitectura técnica para iOS, Android, Cross-Platform y UX',
-    title: 'Arquitectura de Apps',
-    subtitle: 'iOS, Android, Cross-Platform y UX',
-    description: 'Desarrollo en stacks nativos y multiplataforma con estándares de usabilidad y rendimiento.',
+    alt: 'Panel hotelero para optimización de habitaciones y reservas automatizadas',
+    title: 'Panel Hotelero',
+    subtitle: 'Optimización de ocupación',
+    description: 'Canal automatizado para maximizar habitaciones disponibles y captar reservas con exclusividad de zona.',
   },
 ];
 
@@ -156,95 +181,97 @@ export const SERVICES: ServiceCard[] = [
     number: '01',
     ciiu: 'CIIU 6201',
     size: 'large',
-    title: 'Soluciones Tecnológicas',
-    tagline: 'Sistemas informáticos a medida',
+    title: 'Ecosistema Tecnológico',
+    tagline: 'Apps móviles y panel web',
     description:
-      'Diseño, desarrollo y mantenimiento de sistemas informáticos, software, páginas web y aplicaciones móviles adaptadas a los requerimientos específicos de cada organización.',
-    tags: ['Software', 'Web', 'Apps móviles'],
+      'Desarrollamos la infraestructura tecnológica de la plataforma: app móvil para iOS y Android con mapa interactivo y catálogo interno, y un panel de control para administrar solicitudes en tiempo real.',
+    tags: ['App iOS y Android', 'Mapa interactivo', 'Panel de control'],
   },
   {
     id: 'platforms',
     number: '02',
     ciiu: 'CIIU 6312',
     size: 'wide',
-    title: 'Plataformas Digitales',
-    tagline: 'Portales y ecosistemas en línea',
+    title: 'Red Privada y Verificación',
+    tagline: 'Comunidad exclusiva y filtrada',
+    // TODO: confirmar validación de perfiles y entorno privado con el equipo técnico/legal.
     description:
-      'Creación, operación y administración de plataformas donde los usuarios consultan servicios de terceros, conocen sus características y se contactan directamente con los prestadores. Operamos el espacio; el acuerdo y el pago son directos entre las partes.',
-    tags: ['Portales', 'Contacto directo', 'Ecosistemas'],
+      'Conectamos usuarios con prestadores independientes mediante validación digital de identidad, agenda organizada y total confidencialidad. Acuerdo y pago directos entre las partes.',
+    tags: ['Identidad validada', 'Agenda organizada', 'Discreción total'],
   },
   {
     id: 'marketing',
     number: '03',
     ciiu: 'CIIU 7310',
     size: 'medium',
-    title: 'Publicidad y Mercadeo',
-    tagline: 'Visibilidad y alcance digital',
+    title: 'Infraestructura de Hospedaje',
+    tagline: 'Hoteles aliados certificados',
     description:
-      'Mercadeo digital, publicidad y promoción de productos y servicios en web, apps y otros canales electrónicos para dar visibilidad a las ofertas de nuestros clientes.',
-    tags: ['Mercadeo digital', 'Promoción', 'Alcance'],
+      'Posicionamos a establecimientos aliados dentro de la app con prioridad geográfica y exclusividad de zona, canalizando reservas internas para optimizar habitaciones disponibles.',
+    tags: ['Hoteles aliados', 'Exclusividad de zona', 'Reservas internas'],
   },
   {
     id: 'ecommerce',
     number: '04',
     ciiu: 'CIIU 4791',
     size: 'medium',
-    title: 'Comercio Electrónico',
-    tagline: 'Ventas e intercambio digital',
+    title: 'Gestión y Acuerdos Directos',
+    tagline: 'Autonomía y coordinación ágil',
     description:
-      'Comercialización de bienes, productos y servicios por Internet y actividades comerciales complementarias para empresas que quieren operar en canales digitales.',
-    tags: ['Comercio en línea', 'Ventas', 'Internet'],
+      'Facilitamos la consulta de disponibilidad y la coordinación de solicitudes en tiempo real con total autonomía, sin intermediación financiera en los acuerdos de las partes.',
+    tags: ['Acuerdo directo', 'Disponibilidad real', 'Sin intermediación'],
   },
 ];
 
 export const MARQUEE_ITEMS = [
-  'Diseño Web',
-  'Apps iOS',
-  'Apps Android',
-  'Software a Medida',
-  'Portales Digitales',
-  'Marketing Digital',
-  'E-commerce',
-  'Sistemas Informáticos',
+  { label: 'Flujo Constante de Reservas Internas', icon: 'Repeat' },
+  { label: 'Perfiles Previamente Verificados', icon: 'BadgeCheck' },
+  { label: 'Integra Nuestra Comunidad', icon: 'Users' },
+  { label: 'Posicionamiento Dentro de la App', icon: 'MapPin' },
+  { label: 'Prioridad Frente a Hoteles No Afiliados', icon: 'TrendingUp' },
+  // TODO: confirmar "Garantizada" con el equipo legal.
+  { label: 'Confidencialidad y Seguridad Garantizada', icon: 'ShieldCheck' },
 ];
 
 export const HOW_IT_WORKS_CONTENT = {
   tagline: 'PROCESO TRANSPARENTE',
-  title: 'Cómo Funciona',
+  title: 'Cómo Funciona la Plataforma',
   subtitle:
-    'Un modelo claro y respetuoso de la autonomía entre usuarios y prestadores de servicios independientes.',
+    'Un modelo ágil y organizado que conecta usuarios, prestadores independientes y hoteles aliados con total autonomía y discreción.',
   steps: [
     {
       step: '01',
-      title: 'Explora y Descubre',
+      title: 'Registro y verificación',
+      // TODO: confirmar proceso real de validación de identidad con el equipo técnico/legal.
       description:
-        'Navega el catálogo de perfiles, portfolios y servicios disponibles en la plataforma con total privacidad y fluidez.',
-      highlight: 'Información detallada y organizada.',
+        'Crea tu perfil según tu rol en la comunidad privada. Implementamos un protocolo de validación de identidad digital para garantizar que interactúas en un entorno seguro y confiable.',
+      highlight: 'Validación de identidad digital.',
     },
     {
       step: '02',
-      title: 'Contacta Directamente',
+      title: 'Acceso privado y gestión',
       description:
-        'Usa los canales de contacto directos (WhatsApp, llamada, correo) indicados por cada prestador para comunicarte sin intermediarios.',
-      highlight: 'Comunicación punto a punto, sin barreras.',
+        'Ingresa al ecosistema de la app para publicar tu disponibilidad o explorar perfiles verificados. Administra tu agenda organizada, tarifas e interacciones con total confidencialidad.',
+      highlight: 'Agenda y tarifas centralizadas.',
     },
     {
       step: '03',
-      title: 'Acuerda de Forma Autónoma',
+      title: 'Conexión y encuentro seguro',
       description:
-        'El pacto de servicio, los detalles, condiciones y el pago se conciertan libremente entre el usuario y el prestador. HOT COMPANY no interviene en la transacción.',
-      highlight: 'Libertad y autonomía completa entre las partes.',
+        'Coordina tus experiencias sociales y de acompañamiento con tranquilidad. El sistema prioriza automáticamente la reserva interna en los hoteles aliados y hospedajes certificados más cercanos.',
+      highlight: 'Hoteles aliados certificados.',
     },
   ] as HowItWorksStep[],
 };
 
 export const CONTACT_CONTENT = {
-  tagline: 'ATENCIÓN DIRECTA',
-  title: 'Contáctanos',
+  tagline: 'RED PRIVADA',
+  title: 'Únete a Nuestra Red',
   subtitle:
-    '¿Quieres saber cómo podemos ayudarte? Escríbenos y te orientamos sin compromiso.',
-  whatsappLabel: 'Respuesta directa',
-  whatsappNote: 'Tiempo de respuesta habitual: menos de 2 horas hábiles.',
+    'Si buscas gestionar tu tiempo con respaldo, acceder a experiencias confiables o vincular tu hotel aliado, contáctanos hoy mismo.',
+  whatsappLabel: 'Atención para Workers, Usuarios y Hoteles',
+  // TODO: si el equipo confirma un tiempo real, se agrega.
+  whatsappNote: 'Te asesoramos de inmediato por WhatsApp o correo.',
 };
 
 export const FOOTER_LINKS = {
@@ -252,11 +279,10 @@ export const FOOTER_LINKS = {
     { label: 'Servicios', href: '#servicios' },
     { label: 'Cómo funciona', href: '#como-funciona' },
     { label: 'Contacto', href: '#contacto' },
+    { label: 'Desarrollo', href: '/desarrollo/' },
   ],
   legal: [
-    // TODO: Crear y enlazar documentos legales definitivos
-    { label: 'Aviso Legal y +18', href: '#aviso-legal' },
     { label: 'Política de Privacidad', href: '/privacidad' },
-    { label: 'Términos y Condiciones', href: '#terminos' },
+    { label: 'Términos y Condiciones', href: '/terminos' },
   ],
 };

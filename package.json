@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "sync:landing": "cd ../Firma-React && npm run build -- --base=/desarrollo/ && rm -rf ../hotcompany.webside/public/desarrollo && cp -R dist ../hotcompany.webside/public/desarrollo"
   },
   "dependencies": {
     "@fontsource-variable/dm-sans": "^5.3.0",

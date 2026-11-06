@@ -116,7 +116,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, index, reducedMotion
           {service.title}
         </h3>
 
-        <p className="font-sans text-[15px] text-[#A89F98] leading-relaxed line-clamp-4 w-[90%]">
+        <p className="font-sans text-sm text-[#A89F98] leading-relaxed line-clamp-6 w-[90%]">
           {service.description}
         </p>
 
@@ -167,7 +167,7 @@ export const Services: React.FC = () => {
           >
             <span className="w-1.5 h-1.5 rounded-full bg-[#E10600] animate-pulse" />
             <span className="font-mono text-[10px] tracking-widest uppercase text-[#FFB020]">
-              Nuestras Capacidades
+              Ecosistema & Servicios
             </span>
           </motion.div>
 
@@ -179,7 +179,7 @@ export const Services: React.FC = () => {
             className="font-display font-extrabold text-[#F5F1EC] tracking-tight leading-tight"
             style={{ fontSize: 'clamp(1.7rem, 3.5vw + 0.5rem, 3rem)' }}
           >
-            Lo que <span className="text-gradient">construimos</span>
+            Nuestra <span className="text-gradient">plataforma</span>
           </motion.h2>
         </div>
 
