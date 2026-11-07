@@ -32,3 +32,4 @@ hotcompany-dist.zip
 *.njsproj
 *.sln
 *.sw?
+hotcompany-dist*.zip
