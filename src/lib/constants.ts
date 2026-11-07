@@ -37,7 +37,7 @@ const WHATSAPP_HOTEL_MSG = encodeURIComponent(
   'Hola, soy Hotel y quiero información sobre la aplicación para vincular mi establecimiento como hotel aliado.'
 );
 
-export const SITE_URL = 'https://www.hotcompanyweb.com';
+export const SITE_URL = 'https://hotcompany.app';
 
 export const COMPANY_INFO = {
   name: 'HOT COMPANY S.A.S.',
@@ -47,7 +47,7 @@ export const COMPANY_INFO = {
   address: 'Calle 6 # 68-45, Bogotá D. C.',
   mapsUrl: 'https://maps.google.com/?q=Calle+6+%23+68-45,+Bogotá',
   city: 'Bogotá D. C., Colombia',
-  email: 'soporte@hotcompanyweb.com',
+  email: 'info@hotcompany.app',
   phone: '312 661 1763',
   phoneDisplay: '+57 312 661 1763',
   phoneTel: '+573126611763',

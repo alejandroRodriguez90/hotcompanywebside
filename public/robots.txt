@@ -1,5 +1,5 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.hotcompanyweb.com/sitemap.xml
+Sitemap: https://hotcompany.app/sitemap.xml
 

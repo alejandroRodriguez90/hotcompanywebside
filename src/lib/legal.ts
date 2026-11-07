@@ -10,6 +10,7 @@
  * Los correos dentro de texto se detectan automáticamente y se enlazan con mailto:.
  */
 
+import { COMPANY_INFO } from './constants';
 
 // ── Tipos ────────────────────────────────────────────────────────────
 
@@ -36,7 +37,7 @@ export interface LegalDocument {
 // ── Política de Privacidad y Tratamiento de Datos Personales (12 secciones) ──
 
 // TODO LEGAL: confirmar datos de empresa (razón social, NIT, domicilio) con el equipo legal.
-// TODO LEGAL: confirmar que soporte@hotcompanyweb.com es el correo a citar en los Términos y la Política de Privacidad.
+// TODO LEGAL: confirmar que info@hotcompany.app es el correo a citar en los Términos y la Política de Privacidad.
 // El borrador original decía "Hot Compnay S.A.S" (typo) y NIT "9011882342" (sin guion).
 
 export const PRIVACY_POLICY: LegalDocument = {
@@ -57,7 +58,7 @@ export const PRIVACY_POLICY: LegalDocument = {
             { label: 'Razón social', value: 'HOT COMPANY S.A.S.' },
             { label: 'NIT', value: '9011882342' },
             { label: 'Domicilio', value: 'Bogotá' },
-            { label: 'Correo', value: 'soporte@hotcompanyweb.com' },
+            { label: 'Correo', value: COMPANY_INFO.email },
           ],
         },
         {
@@ -268,7 +269,7 @@ export const PRIVACY_POLICY: LegalDocument = {
         {
           type: 'contact',
           lines: [
-            { label: 'Correo', value: 'soporte@hotcompanyweb.com' },
+            { label: 'Correo', value: COMPANY_INFO.email },
             { label: 'Dentro de la aplicación', value: 'Configuración → Cuenta → Eliminar cuenta.' },
           ],
         },
@@ -282,7 +283,7 @@ export const PRIVACY_POLICY: LegalDocument = {
           type: 'contact',
           lines: [
             { label: 'Responsable', value: 'HC' },
-            { label: 'Correo', value: 'soporte@hotcompanyweb.com' },
+            { label: 'Correo', value: COMPANY_INFO.email },
           ],
         },
         {
@@ -297,7 +298,7 @@ export const PRIVACY_POLICY: LegalDocument = {
 // ── Términos y Condiciones de Uso (16 secciones) ──
 
 // TODO LEGAL: confirmar datos de empresa (razón social, NIT, domicilio) con el equipo legal.
-// TODO LEGAL: confirmar que soporte@hotcompanyweb.com es el correo a citar en los Términos y la Política de Privacidad.
+// TODO LEGAL: confirmar que info@hotcompany.app es el correo a citar en los Términos y la Política de Privacidad.
 // El borrador original decía "HOT COMPANY S.A.S" con NIT "9011882342" (sin guion).
 // TODO LEGAL: Los textos describen la aplicación (cuentas, membresías, reservas, procesadores de pago, eliminación de cuenta) mientras el sitio indica acuerdo y pago directo entre las partes: validar coherencia.
 // TODO LEGAL: La política no incluye explícitamente los datos del formulario de contacto de este sitio web (nombre, correo, teléfono, mensaje): evaluar agregar esa finalidad.
@@ -325,9 +326,9 @@ export const TERMS_AND_CONDITIONS: LegalDocument = {
             { label: 'Razón social', value: 'HOT COMPANY S.A.S' },
             { label: 'NIT', value: '9011882342' },
             { label: 'Domicilio', value: 'Bogotá' },
-            { label: 'Correo de contacto', value: 'soporte@hotcompanyweb.com' },
-            // TODO LEGAL: confirmar con el abogado que www.hotcompanyweb.com es el dominio a citar en los Términos.
-            { label: 'Sitio web', value: 'www.hotcompanyweb.com' },
+            { label: 'Correo de contacto', value: COMPANY_INFO.email },
+            // TODO LEGAL: confirmar con el abogado que hotcompany.app es el dominio a citar en los Términos.
+            { label: 'Sitio web', value: COMPANY_INFO.siteUrl.replace(/^https?:\/\//, '') },
           ],
         },
         {
@@ -572,7 +573,7 @@ export const TERMS_AND_CONDITIONS: LegalDocument = {
         {
           type: 'contact',
           lines: [
-            { label: 'Correo', value: 'soporte@hotcompanyweb.com' },
+            { label: 'Correo', value: COMPANY_INFO.email },
           ],
         },
       ],

@@ -1,7 +1,7 @@
 # HOT COMPANY S.A.S. — Sitio Web Corporativo
 
 Sitio web corporativo para **HOT COMPANY S.A.S.** (NIT: 901.188.234-2), empresa colombiana de soluciones digitales con sede en Bogotá D. C.  
-Dominio canónico de producción: **`https://www.hotcompanyweb.com`**
+Dominio canónico de producción: **`https://hotcompany.app`**
 
 Estética: **Dark Nightlife Premium** + **Glass System iOS/Liquid Glass** + **Acentos de Marca Naranja/Ámbar** (`#E10600`, `#FF6A13`, `#FFB020`).
 
@@ -231,8 +231,8 @@ El resultado se genera en la carpeta `dist/`.
 Durante el build, Vite copia `public/.htaccess` a `dist/`. Este archivo gestiona:
 1. **Redirecciones canónicas (301):**
    - HTTP → HTTPS (a prueba de proxy mediante `%{HTTP:X-Forwarded-Proto}`).
-   - `hotcompanyweb.com` → `www.hotcompanyweb.com`.
-   - `/terminos-y-condiciones` → `https://www.hotcompanyweb.com/terminos`.
+   - `www.hotcompany.app` → `https://hotcompany.app`.
+   - `/terminos-y-condiciones` → `https://hotcompany.app/terminos`.
 2. **Fallback SPA:** Redirige URLs inexistentes a `index.html` (respetando carpetas existentes como `/desarrollo/`).
 3. **Compresión Gzip / Deflate:** Comprime HTML, CSS, JS, SVG, JSON y fuentes.
 4. **Caché diferenciado:**
@@ -246,16 +246,16 @@ Durante el build, Vite copia `public/.htaccess` a `dist/`. Este archivo gestiona
 ## 📋 Checklist de Despliegue
 
 ### Pre-deploy:
-- [ ] Asegurarse de que el certificado SSL esté instalado y activo en Hostinger para `hotcompanyweb.com` y `www.hotcompanyweb.com` antes de publicar.
+- [ ] Asegurarse de que el certificado SSL esté instalado y activo en Hostinger para `hotcompany.app` y `www.hotcompany.app` antes de publicar.
 - [ ] Configurar `VITE_FORM_ENDPOINT` en `.env.production` con el endpoint definitivo y recompilar con `npm run build`.
 - [ ] Verificar que `public/og-image.png` tenga una versión final de 1200×630 px (proporción 1.91:1) proporcionada por diseño.
 - [ ] Confirmar que `dist/.htaccess` y `dist/desarrollo/.htaccess` estén presentes.
 
 ### Post-deploy:
-- [ ] **Redirecciones:** Ejecutar `curl -I http://hotcompanyweb.com` y confirmar respuesta `301` hacia `https://www.hotcompanyweb.com/`.
-- [ ] **Ruta legal:** Probar acceso directo a `https://www.hotcompanyweb.com/privacidad` y `https://www.hotcompanyweb.com/terminos` (confirmar status 200 sin 404).
-- [ ] **Caché:** Ejecutar `curl -I https://www.hotcompanyweb.com/` y comprobar `Cache-Control: no-cache, no-store, must-revalidate`.
-- [ ] **Landing `/desarrollo/`:** Acceder a `https://www.hotcompanyweb.com/desarrollo/` y verificar en la consola de DevTools que no existan bloqueos de CSP.
+- [ ] **Redirecciones:** Ejecutar `curl -I http://hotcompany.app` y confirmar respuesta `301` hacia `https://hotcompany.app/`.
+- [ ] **Ruta legal:** Probar acceso directo a `https://hotcompany.app/privacidad` y `https://hotcompany.app/terminos` (confirmar status 200 sin 404).
+- [ ] **Caché:** Ejecutar `curl -I https://hotcompany.app/` y comprobar `Cache-Control: no-cache, no-store, must-revalidate`.
+- [ ] **Landing `/desarrollo/`:** Acceder a `https://hotcompany.app/desarrollo/` y verificar en la consola de DevTools que no existan bloqueos de CSP.
 - [ ] **Formulario:** Enviar prueba y verificar recepción en endpoint o redirección a WhatsApp sin errores.
 
 ---
