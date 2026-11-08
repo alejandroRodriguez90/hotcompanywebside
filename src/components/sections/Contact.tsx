@@ -7,14 +7,41 @@ import { WhatsAppIcon } from '../ui/WhatsAppIcon';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 interface FormData {
-  nombre: string;
-  correo: string;
-  telefono: string;
-  mensaje: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  message: string;
   consent: boolean;
 }
 
 type FormState = 'idle' | 'loading' | 'success' | 'error' | 'whatsapp_fallback';
+
+interface ContactPayload {
+  fullName: string;
+  email: string;
+  phone: string;
+  message: string;
+  privacyPolicyAccepted: boolean;
+}
+
+/**
+ * Normaliza el teléfono a formato internacional sin espacios ni guiones.
+ * - 10 dígitos locales → +57XXXXXXXXXX (ej. 3001234567 → +573001234567)
+ * - Empieza por 57 → +57XXXXXXXXXX
+ * - Empieza por +57 → se conserva
+ * Devuelve null si no se puede normalizar.
+ */
+const normalizePhone = (rawPhone: string): string | null => {
+  const cleaned = rawPhone.trim().replace(/[\s\-().]/g, '');
+
+  if (!cleaned) return '';
+
+  if (/^\+57\d{10}$/.test(cleaned)) return cleaned;
+  if (/^57\d{10}$/.test(cleaned)) return `+${cleaned}`;
+  if (/^\d{10}$/.test(cleaned)) return `+57${cleaned}`;
+
+  return null;
+};
 
 interface FieldProps {
   id: string;
@@ -101,10 +128,10 @@ const Field: React.FC<FieldProps> = ({
 export const Contact: React.FC = () => {
   const reducedMotion = useReducedMotion();
   const [formData, setFormData] = useState<FormData>({
-    nombre: '',
-    correo: '',
-    telefono: '',
-    mensaje: '',
+    fullName: '',
+    email: '',
+    phone: '',
+    message: '',
     consent: false,
   });
   const [honeypot, setHoneypot] = useState('');
@@ -116,29 +143,26 @@ export const Contact: React.FC = () => {
   const validate = (): boolean => {
     const errs: Partial<Record<keyof FormData, string>> = {};
 
-    const nombreClean = formData.nombre.trim();
+    const nombreClean = formData.fullName.trim();
     if (!nombreClean || nombreClean.length < 3) {
-      errs.nombre = 'Ingresa tu nombre completo (mínimo 3 caracteres)';
+      errs.fullName = 'Ingresa tu nombre completo (mínimo 3 caracteres)';
     }
 
-    const correoClean = formData.correo.trim();
+    const correoClean = formData.email.trim();
     if (!correoClean || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correoClean)) {
-      errs.correo = 'Ingresa un correo electrónico válido';
+      errs.email = 'Ingresa un correo electrónico válido';
     }
 
-    const cleanPhone = formData.telefono.trim().replace(/[\s\-().]/g, '');
-    if (cleanPhone.length > 0) {
-      const isValidColPhone = /^(\+?57)?(3\d{9}|[1-9]\d{6,9})$/.test(cleanPhone);
-      if (!isValidColPhone) {
-        errs.telefono = `Número colombiano no válido (ej. ${COMPANY_INFO.phoneDisplay} o 10 dígitos)`;
-      }
+    const phoneNormalized = normalizePhone(formData.phone);
+    if (formData.phone.trim().length > 0 && !phoneNormalized) {
+      errs.phone = `Número colombiano no válido (ej. ${COMPANY_INFO.phoneDisplay} o 10 dígitos)`;
     }
 
-    const mensajeClean = formData.mensaje.trim();
+    const mensajeClean = formData.message.trim();
     if (!mensajeClean || mensajeClean.length < 10) {
-      errs.mensaje = 'Por favor escribe al menos 10 caracteres';
+      errs.message = 'Por favor escribe al menos 10 caracteres';
     } else if (mensajeClean.length > 1000) {
-      errs.mensaje = 'El mensaje no debe exceder los 1000 caracteres';
+      errs.message = 'El mensaje no debe exceder los 1000 caracteres';
     }
 
     if (!formData.consent) {
@@ -172,8 +196,8 @@ export const Contact: React.FC = () => {
 
     // Respaldo por WhatsApp si VITE_FORM_ENDPOINT no está configurado (sin falso éxito)
     if (!endpoint) {
-      const telText = formData.telefono.trim() ? formData.telefono.trim() : 'No proporcionado';
-      const waMessage = `Hola HOT COMPANY S.A.S., me gustaría ponerme en contacto.\n\n*Nombre:* ${formData.nombre.trim()}\n*Correo:* ${formData.correo.trim()}\n*Teléfono:* ${telText}\n*Mensaje:* ${formData.mensaje.trim()}`;
+      const telText = normalizePhone(formData.phone) || 'No proporcionado';
+      const waMessage = `Hola HOT COMPANY S.A.S., me gustaría ponerme en contacto.\n\n*Nombre:* ${formData.fullName.trim()}\n*Correo:* ${formData.email.trim().toLowerCase()}\n*Teléfono:* ${telText}\n*Mensaje:* ${formData.message.trim()}`;
       const waUrl = `https://wa.me/${COMPANY_INFO.whatsappNumber}?text=${encodeURIComponent(waMessage)}`;
 
       setFallbackWaUrl(waUrl);
@@ -185,6 +209,14 @@ export const Contact: React.FC = () => {
     setFormState('loading');
     setErrorMessage('');
 
+    const payload: ContactPayload = {
+      fullName: formData.fullName.trim(),
+      email: formData.email.trim().toLowerCase(),
+      phone: normalizePhone(formData.phone) ?? '',
+      message: formData.message.trim(),
+      privacyPolicyAccepted: formData.consent,
+    };
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
 
@@ -192,17 +224,9 @@ export const Contact: React.FC = () => {
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: {
-          'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          nombre: formData.nombre.trim(),
-          correo: formData.correo.trim(),
-          telefono: formData.telefono.trim() || 'No proporcionado',
-          mensaje: formData.mensaje.trim(),
-          consentimiento_datos: true,
-          fecha_envio: new Date().toISOString(),
-        }),
+        body: JSON.stringify(payload),
         signal: controller.signal,
       });
 
@@ -218,7 +242,7 @@ export const Contact: React.FC = () => {
       }
 
       setFormState('success');
-      setFormData({ nombre: '', correo: '', telefono: '', mensaje: '', consent: false });
+      setFormData({ fullName: '', email: '', phone: '', message: '', consent: false });
       setHoneypot('');
     } catch (err: unknown) {
       clearTimeout(timeoutId);
@@ -236,8 +260,8 @@ export const Contact: React.FC = () => {
   };
 
   const getWaPrefilledUrl = () => {
-    const telText = formData.telefono.trim() ? formData.telefono.trim() : 'No proporcionado';
-    const waMessage = `Hola HOT COMPANY S.A.S., intento enviar una consulta desde la web.\n\n*Nombre:* ${formData.nombre.trim()}\n*Correo:* ${formData.correo.trim()}\n*Teléfono:* ${telText}\n*Mensaje:* ${formData.mensaje.trim()}`;
+    const telText = normalizePhone(formData.phone) || 'No proporcionado';
+    const waMessage = `Hola HOT COMPANY S.A.S., intento enviar una consulta desde la web.\n\n*Nombre:* ${formData.fullName.trim()}\n*Correo:* ${formData.email.trim().toLowerCase()}\n*Teléfono:* ${telText}\n*Mensaje:* ${formData.message.trim()}`;
     return `https://wa.me/${COMPANY_INFO.whatsappNumber}?text=${encodeURIComponent(waMessage)}`;
   };
 
@@ -359,7 +383,7 @@ export const Contact: React.FC = () => {
                   size="sm"
                   onClick={() => {
                     setFormState('idle');
-                    setFormData({ nombre: '', correo: '', telefono: '', mensaje: '', consent: false });
+                    setFormData({ fullName: '', email: '', phone: '', message: '', consent: false });
                   }}
                 >
                   Volver al formulario
@@ -440,36 +464,36 @@ export const Contact: React.FC = () => {
 
                 <Field
                   id="nombre"
-                  name="nombre"
+                  name="fullName"
                   label="Nombre completo *"
                   placeholder="Carlos Mendoza"
                   maxLength={100}
-                  value={formData.nombre}
-                  error={errors.nombre}
+                  value={formData.fullName}
+                  error={errors.fullName}
                   onChange={handleChange}
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field
                     id="correo"
-                    name="correo"
+                    name="email"
                     label="Correo electrónico *"
                     type="email"
                     placeholder="hola@empresa.com"
                     maxLength={100}
-                    value={formData.correo}
-                    error={errors.correo}
+                    value={formData.email}
+                    error={errors.email}
                     onChange={handleChange}
                   />
                   <Field
                     id="telefono"
-                    name="telefono"
+                    name="phone"
                     label="Teléfono / WhatsApp (Opcional)"
                     type="tel"
                     placeholder={COMPANY_INFO.phoneDisplay}
                     maxLength={20}
-                    value={formData.telefono}
-                    error={errors.telefono}
+                    value={formData.phone}
+                    error={errors.phone}
                     onChange={handleChange}
                   />
                 </div>
@@ -477,18 +501,18 @@ export const Contact: React.FC = () => {
                 <div>
                   <Field
                     id="mensaje"
-                    name="mensaje"
+                    name="message"
                     label="¿En qué podemos ayudarte? *"
                     placeholder="Cuéntanos si eres usuario, worker independiente o representas a un hotel aliado..."
                     maxLength={1000}
-                    value={formData.mensaje}
-                    error={errors.mensaje}
+                    value={formData.message}
+                    error={errors.message}
                     onChange={handleChange}
                     isTextarea
                   />
                   <div className="flex justify-end mt-1 px-1">
                     <span className="font-mono text-[10px] text-[#A89F98]/50">
-                      {formData.mensaje.length}/1000
+                      {formData.message.length}/1000
                     </span>
                   </div>
                 </div>
