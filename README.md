@@ -47,7 +47,10 @@ npm run build            # Build de producción
 
 ```text
 hotcompany.webside/
+├── netlify.toml                # Build de Netlify (publish dist, Node 22)
 ├── public/
+│   ├── _redirects              # Redirects de Netlify (301 términos + fallback SPA)
+│   ├── _headers                # Cabeceras de seguridad y CSP por ruta (Netlify)
 │   ├── brand/                  # Activos de marca
 │   │   ├── logo.jpeg           # Logo principal (dado 3D, fondo negro)
 │   │   └── Logo-removebg-preview.jpg
@@ -198,23 +201,39 @@ Ubicación: `src/components/ui/Marquee.tsx`
 ## 💬 Contacto & WhatsApp
 
 - **Formulario conectado**: Gestionado a través de `VITE_FORM_ENDPOINT`. En ausencia de endpoint, activa un fallback directo y transparente a WhatsApp oficial (`+57 312 661 1763`).
+- **Contrato JSON (POST `Content-Type: application/json`)**: el body contiene exactamente estas 5 claves, sin campos extra:
+  ```json
+  {
+    "fullName": "string",
+    "email": "string",
+    "phone": "+573001234567",
+    "message": "string",
+    "privacyPolicyAccepted": true
+  }
+  ```
+  `phone` se normaliza a formato internacional (+57XXXXXXXXXX); `privacyPolicyAccepted` solo se envía en `true` porque el consentimiento es obligatorio.
 - **Icono nativo**: SVG vectorial optimizado en `WhatsAppIcon.tsx`.
 
 ---
 
-## 🚀 Despliegue a Producción (Hostinger)
+## 🚀 Despliegue a Producción
 
-El proyecto está preparado para desplegarse como un Single Page Application (SPA) estático en servidores Apache de **Hostinger**.
+### Netlify (hosting actual)
+
+La configuración de despliegue vive en:
+- **`netlify.toml`** (raíz): `command = "npm run build"`, `publish = "dist"` y `NODE_VERSION = "22"`. No incluye redirects ni headers para no duplicar reglas.
+- **`public/_redirects`**: `/terminos-y-condiciones` → `/terminos` (301) y fallback SPA `/*  /index.html  200`.
+- **`public/_headers`**: cabeceras de seguridad en `/*` (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`) y CSP **solo** en `/`, `/index.html`, `/privacidad` y `/terminos`. El CSP no se aplica en `/*` ni en `/desarrollo/*` para no bloquear las fuentes e iconos de la landing, que trae su propio CSP en una etiqueta `<meta>`. Incluye caché larga para `/assets/*`, `/images/*` y `/videos/*`.
 
 ### 1. Variables de Entorno
-Crea un archivo `.env.production` (o configura la variable en tu entorno de build):
+Configura `VITE_FORM_ENDPOINT` en **Netlify → Site configuration → Environment variables**, o en un `.env.production` local **no versionado** (ya está en `.gitignore`):
 ```bash
-VITE_FORM_ENDPOINT=https://tu-endpoint-de-formulario.com
+VITE_FORM_ENDPOINT=https://URL-DEL-ENDPOINT-AQUI
 ```
 
 ### 2. Comandos de Compilación
 ```bash
-# 1. Sincronizar landing externa
+# 1. Sincronizar landing externa (si cambió ../Firma-React)
 npm run sync:landing
 
 # 2. Validar tipos y linter
@@ -227,36 +246,25 @@ npm run build
 
 El resultado se genera en la carpeta `dist/`.
 
-### 3. Funcionamiento de `.htaccess`
-Durante el build, Vite copia `public/.htaccess` a `dist/`. Este archivo gestiona:
-1. **Redirecciones canónicas (301):**
-   - HTTP → HTTPS (a prueba de proxy mediante `%{HTTP:X-Forwarded-Proto}`).
-   - `www.hotcompany.app` → `https://hotcompany.app`.
-   - `/terminos-y-condiciones` → `https://hotcompany.app/terminos`.
-2. **Fallback SPA:** Redirige URLs inexistentes a `index.html` (respetando carpetas existentes como `/desarrollo/`).
-3. **Compresión Gzip / Deflate:** Comprime HTML, CSS, JS, SVG, JSON y fuentes.
-4. **Caché diferenciado:**
-   - Bundles `.js`, `.css` y fuentes: `max-age=31536000, public, immutable`.
-   - Imágenes y videos: `max-age=2592000, public`.
-   - `index.html`: `no-cache, no-store, must-revalidate`.
-5. **Encabezados de Seguridad:** HSTS prudente (`max-age=86400`), CSP estricto, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`.
+### 3. `.htaccess` (solo Hostinger)
+`public/.htaccess` y `public/desarrollo/.htaccess` se conservan para despliegues en Apache/Hostinger; **Netlify los ignora**. En Hostinger gestionan redirecciones canónicas, fallback SPA, compresión, caché y cabeceras de seguridad. La landing `/desarrollo/` mantiene su propio CSP.
 
 ---
 
 ## 📋 Checklist de Despliegue
 
 ### Pre-deploy:
-- [ ] Asegurarse de que el certificado SSL esté instalado y activo en Hostinger para `hotcompany.app` y `www.hotcompany.app` antes de publicar.
-- [ ] Configurar `VITE_FORM_ENDPOINT` en `.env.production` con el endpoint definitivo y recompilar con `npm run build`.
+- [ ] Configurar `VITE_FORM_ENDPOINT` en Netlify (Environment variables) o en `.env.production` local, y recompilar con `npm run build`.
 - [ ] Verificar que `public/og-image.png` tenga una versión final de 1200×630 px (proporción 1.91:1) proporcionada por diseño.
-- [ ] Confirmar que `dist/.htaccess` y `dist/desarrollo/.htaccess` estén presentes.
+- [ ] Confirmar que el build genera `dist/_redirects`, `dist/_headers` y `dist/index.html`.
+- [ ] (Solo Hostinger) Confirmar que `dist/.htaccess` y `dist/desarrollo/.htaccess` estén presentes.
 
 ### Post-deploy:
-- [ ] **Redirecciones:** Ejecutar `curl -I http://hotcompany.app` y confirmar respuesta `301` hacia `https://hotcompany.app/`.
+- [ ] **Redirecciones:** Ejecutar `curl -I https://hotcompany.app/terminos-y-condiciones` y confirmar respuesta `301` hacia `https://hotcompany.app/terminos`.
 - [ ] **Ruta legal:** Probar acceso directo a `https://hotcompany.app/privacidad` y `https://hotcompany.app/terminos` (confirmar status 200 sin 404).
-- [ ] **Caché:** Ejecutar `curl -I https://hotcompany.app/` y comprobar `Cache-Control: no-cache, no-store, must-revalidate`.
+- [ ] **Caché:** Ejecutar `curl -I https://hotcompany.app/` y comprobar `Cache-Control: no-cache`.
 - [ ] **Landing `/desarrollo/`:** Acceder a `https://hotcompany.app/desarrollo/` y verificar en la consola de DevTools que no existan bloqueos de CSP.
-- [ ] **Formulario:** Enviar prueba y verificar recepción en endpoint o redirección a WhatsApp sin errores.
+- [ ] **Formulario:** Enviar prueba y verificar recepción en el endpoint JSON o redirección a WhatsApp sin errores.
 
 ---
 
