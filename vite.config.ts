@@ -13,6 +13,17 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
     react(),
+    {
+      name: 'serve-desarrollo-static-index',
+      configureServer(server) {
+        server.middlewares.use((req, _res, next) => {
+          if (req.url === '/desarrollo' || req.url === '/desarrollo/') {
+            req.url = '/desarrollo/index.html';
+          }
+          next();
+        });
+      },
+    },
   ],
   esbuild: {
     drop: ['console', 'debugger'],
