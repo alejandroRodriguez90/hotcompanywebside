@@ -18,6 +18,7 @@ export const Carousel: React.FC = () => {
   const reducedMotion = useReducedMotion();
   const containerRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<number>(0);
+  const isDraggingRef = useRef<boolean>(false);
 
   const total = CAROUSEL_SLIDES.length;
 
@@ -69,28 +70,37 @@ export const Carousel: React.FC = () => {
     }
   };
 
-  // Drag / Swipe handling
+  // Drag / Swipe handling con umbral de 8px (evita disparar estado de arrastre en clicks y reduce INP)
   const handlePointerDown = (e: React.PointerEvent) => {
+    if (e.button !== 0) return;
     dragStartRef.current = e.clientX;
-    setIsDragging(true);
-    setDragOffset(0);
+    isDraggingRef.current = false;
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDragging) return;
+    if (dragStartRef.current === 0) return;
     const diff = e.clientX - dragStartRef.current;
-    setDragOffset(diff);
+    if (!isDraggingRef.current && Math.abs(diff) > 8) {
+      isDraggingRef.current = true;
+      setIsDragging(true);
+    }
+    if (isDraggingRef.current) {
+      setDragOffset(diff);
+    }
   };
 
   const handlePointerUp = () => {
-    if (!isDragging) return;
-    if (dragOffset > 45) {
-      prev();
-    } else if (dragOffset < -45) {
-      next();
+    if (isDraggingRef.current) {
+      if (dragOffset > 45) {
+        prev();
+      } else if (dragOffset < -45) {
+        next();
+      }
+      setIsDragging(false);
+      setDragOffset(0);
     }
-    setIsDragging(false);
-    setDragOffset(0);
+    dragStartRef.current = 0;
+    isDraggingRef.current = false;
   };
 
   const activeSlide = CAROUSEL_SLIDES[current];
@@ -135,20 +145,29 @@ export const Carousel: React.FC = () => {
             const absDiff = Math.abs(diff);
             const isActive = diff === 0;
             const isNeighbor = absDiff === 1;
-
-            // Ocultar slides más lejanos para un carrusel limpio y de máximo rendimiento
-            if (!isActive && !isNeighbor) return null;
+            const isHidden = !isActive && !isNeighbor;
 
             // Coordenadas coverflow minimalista:
             // Activo al centro grande y de frente. Vecinos escalados a ~0.8, rotateY ±12°, ligeramente abajo/atrás
             const stepX = isMobile ? 140 : 220;
-            const translateX = diff * stepX + (isDragging ? dragOffset * 0.45 : 0);
+            const translateX = isHidden
+              ? (Math.sign(diff) || 1) * (stepX * 1.6)
+              : diff * stepX + (isDragging ? dragOffset * 0.45 : 0);
             const translateY = isActive ? 0 : 16;
-            const translateZ = isActive ? 0 : -140;
+            const translateZ = isActive ? 0 : isHidden ? -260 : -140;
             const rotateY = isActive ? 0 : diff > 0 ? -12 : 12;
-            const scale = isActive ? 1 : 0.8;
-            const opacity = isActive ? 1 : 0.7;
-            const zIndex = isActive ? 30 : 10;
+            const scale = isActive ? 1 : isHidden ? 0.65 : 0.8;
+            const opacity = isActive ? 1 : isHidden ? 0 : 0.7;
+            const zIndex = isActive ? 30 : isHidden ? 0 : 10;
+
+            const targetTransform = {
+              x: translateX,
+              y: translateY,
+              z: translateZ,
+              rotateY,
+              scale,
+              opacity,
+            };
 
             return (
               <motion.div
@@ -156,20 +175,21 @@ export const Carousel: React.FC = () => {
                 onClick={() => {
                   if (!isActive) goTo(idx);
                 }}
+                initial={
+                  reducedMotion
+                    ? {
+                        opacity: isActive ? 1 : 0,
+                        scale: isActive ? 1 : 0.95,
+                      }
+                    : targetTransform
+                }
                 animate={
                   reducedMotion
                     ? {
                         opacity: isActive ? 1 : 0,
                         scale: isActive ? 1 : 0.95,
                       }
-                    : {
-                        x: translateX,
-                        y: translateY,
-                        z: translateZ,
-                        rotateY,
-                        scale,
-                        opacity,
-                      }
+                    : targetTransform
                 }
                 transition={{
                   type: 'spring',
@@ -181,7 +201,9 @@ export const Carousel: React.FC = () => {
                 style={{
                   transformStyle: 'preserve-3d',
                   zIndex,
-                  cursor: isActive ? 'grab' : 'pointer',
+                  cursor: isActive ? 'grab' : isHidden ? 'default' : 'pointer',
+                  pointerEvents: isHidden ? 'none' : 'auto',
+                  visibility: isHidden ? 'hidden' : 'visible',
                   display: reducedMotion && !isActive ? 'none' : 'block',
                 }}
                 title={isActive ? 'Arrastrar' : `Ver ${slide.title}`}
@@ -201,7 +223,7 @@ export const Carousel: React.FC = () => {
                   onBlur={() => {
                     if (isActive) setIsFocused(false);
                   }}
-                  className={`w-full h-full rounded-[40px] p-2.5 sm:p-3 bg-[#050505] transition-shadow duration-300 relative overflow-hidden ${
+                  className={`w-full h-full rounded-[40px] p-2.5 sm:p-3 bg-[#050505] relative overflow-hidden ${
                     isActive ? 'active:cursor-grabbing' : 'hover:opacity-90'
                   }`}
                   style={{
@@ -227,15 +249,19 @@ export const Carousel: React.FC = () => {
                   />
 
                   {/* Contenedor concéntrico para la imagen (no toca el borde exterior) */}
-                  <div className="w-full h-full rounded-[28px] sm:rounded-[30px] overflow-hidden bg-[#0A0A0B] relative">
+                  <div
+                    className="w-full h-full rounded-[28px] sm:rounded-[30px] overflow-hidden bg-[#0A0A0B] relative"
+                    style={{ aspectRatio: '680 / 906' }}
+                  >
                     <img
                       src={slide.src}
                       alt={slide.alt}
                       loading={idx === 0 ? 'eager' : 'lazy'}
-                      decoding="async"
-                      fetchPriority={idx === 0 ? 'high' : 'auto'}
+                      decoding={idx === 0 ? 'sync' : 'async'}
+                      fetchPriority={idx === 0 ? 'high' : 'low'}
                       width="680"
                       height="906"
+                      style={{ aspectRatio: '680 / 906' }}
                       className="w-full h-full object-cover transition-transform duration-500 hover:scale-[1.02]"
                     />
 
@@ -266,9 +292,7 @@ export const Carousel: React.FC = () => {
                         className="absolute inset-x-0 bottom-0 p-4 sm:p-5 pt-10 flex flex-col gap-1.5 z-20 pointer-events-none"
                         style={{
                           background:
-                            'linear-gradient(to top, rgba(5,5,5,0.92) 0%, rgba(5,5,5,0.68) 65%, transparent 100%)',
-                          backdropFilter: 'blur(8px)',
-                          WebkitBackdropFilter: 'blur(8px)',
+                            'linear-gradient(to top, rgba(5,5,5,0.95) 0%, rgba(5,5,5,0.78) 65%, transparent 100%)',
                         }}
                       >
                         <motion.div
