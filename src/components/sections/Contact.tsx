@@ -1,62 +1,67 @@
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
-import { Mail, Phone, MapPin, Send, CheckCircle2, AlertCircle, Loader2, RotateCw } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+  Mail,
+  Phone,
+  MapPin,
+  AlertCircle,
+  Loader2,
+  RotateCw,
+  UserPlus,
+  Check,
+  Eye,
+  EyeOff,
+  Lock,
+  ArrowRight,
+} from 'lucide-react';
 import { COMPANY_INFO, CONTACT_CONTENT } from '../../lib/constants';
+import { TERMS_VERSION } from '../../lib/legal';
 import { Button } from '../ui/Button';
 import { WhatsAppIcon } from '../ui/WhatsAppIcon';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 
-interface FormData {
-  fullName: string;
+interface RegisterFormData {
   email: string;
-  phone: string;
-  message: string;
+  username: string;
   consent: boolean;
 }
 
 type FormState = 'idle' | 'loading' | 'success' | 'error' | 'whatsapp_fallback';
 
-interface ContactPayload {
-  fullName: string;
+interface RegisterPayload {
+  userType: 'WORKER';
   email: string;
-  phone: string;
-  message: string;
-  privacyPolicyAccepted: boolean;
+  username: string;
+  password: string;
+  acceptedTerms: boolean;
+  termsVersion: string;
 }
 
-/**
- * Normaliza el teléfono a formato internacional sin espacios ni guiones.
- * - 10 dígitos locales → +57XXXXXXXXXX (ej. 3001234567 → +573001234567)
- * - Empieza por 57 → +57XXXXXXXXXX
- * - Empieza por +57 → se conserva
- * Devuelve null si no se puede normalizar.
- */
-const normalizePhone = (rawPhone: string): string | null => {
-  const cleaned = rawPhone.trim().replace(/[\s\-().]/g, '');
-
-  if (!cleaned) return '';
-
-  if (/^\+57\d{10}$/.test(cleaned)) return cleaned;
-  if (/^57\d{10}$/.test(cleaned)) return `+${cleaned}`;
-  if (/^\d{10}$/.test(cleaned)) return `+57${cleaned}`;
-
-  return null;
-};
+interface ValidationErrorResponse {
+  status?: number;
+  error?: string;
+  message?: string;
+  fields?: Array<{
+    field: string;
+    message: string;
+  }>;
+}
 
 interface FieldProps {
   id: string;
-  name: keyof FormData;
+  name: string;
   label: string;
   type?: string;
   placeholder: string;
   value: string;
   error?: string;
-  onChange: React.ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement>;
-  isTextarea?: boolean;
+  onChange: React.ChangeEventHandler<HTMLInputElement>;
   maxLength?: number;
+  autoComplete?: string;
+  endAdornment?: React.ReactNode;
 }
 
-const Field: React.FC<FieldProps> = ({
+const Field: React.FC<FieldProps> = React.memo(({
   id,
   name,
   label,
@@ -65,12 +70,15 @@ const Field: React.FC<FieldProps> = ({
   value,
   error,
   onChange,
-  isTextarea,
   maxLength,
+  autoComplete,
+  endAdornment,
 }) => {
   const hasValue = value.length > 0;
 
   const inputClass = `w-full px-4 pt-6 pb-2 rounded-2xl glass font-sans text-sm text-[#F5F1EC] placeholder-transparent focus:outline-none transition-all duration-300 ${
+    endAdornment ? 'pr-12' : ''
+  } ${
     error
       ? 'border-[#E10600]/80 focus:border-[#E10600] focus:ring-2 focus:ring-[#E10600]/50 focus:shadow-[0_0_20px_rgba(225,6,0,0.35)]'
       : 'border-white/14 focus:border-[#FF6A13] focus:ring-2 focus:ring-[#FF6A13]/50 focus:shadow-[0_0_20px_rgba(255,106,19,0.3)]'
@@ -78,33 +86,19 @@ const Field: React.FC<FieldProps> = ({
 
   return (
     <div className="relative">
-      {isTextarea ? (
-        <textarea
-          id={id}
-          name={name}
-          rows={4}
-          maxLength={maxLength}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          className={`${inputClass} resize-none`}
-          aria-invalid={Boolean(error)}
-          aria-describedby={error ? `${id}-error` : undefined}
-        />
-      ) : (
-        <input
-          type={type}
-          id={id}
-          name={name}
-          maxLength={maxLength}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          className={inputClass}
-          aria-invalid={Boolean(error)}
-          aria-describedby={error ? `${id}-error` : undefined}
-        />
-      )}
+      <input
+        type={type}
+        id={id}
+        name={name}
+        maxLength={maxLength}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        className={inputClass}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? `${id}-error` : undefined}
+      />
       {/* Floating label */}
       <label
         htmlFor={id}
@@ -115,6 +109,12 @@ const Field: React.FC<FieldProps> = ({
         {label}
       </label>
 
+      {endAdornment && (
+        <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center">
+          {endAdornment}
+        </div>
+      )}
+
       {error && (
         <p id={`${id}-error`} role="alert" className="mt-1.5 flex items-center gap-1 text-xs text-[#E10600]">
           <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={1.5} />
@@ -123,98 +123,327 @@ const Field: React.FC<FieldProps> = ({
       )}
     </div>
   );
-};
+});
+Field.displayName = 'Field';
 
-export const Contact: React.FC = () => {
-  const reducedMotion = useReducedMotion();
-  const [formData, setFormData] = useState<FormData>({
-    fullName: '',
-    email: '',
-    phone: '',
-    message: '',
-    consent: false,
-  });
+interface Step1FormProps {
+  initialData: RegisterFormData;
+  initialErrors?: Partial<Record<keyof RegisterFormData, string>>;
+  errorMessage?: string;
+  reducedMotion: boolean;
+  onComplete: (data: RegisterFormData, honeypotValue: string) => void;
+}
+
+const Step1Form: React.FC<Step1FormProps> = ({
+  initialData,
+  initialErrors,
+  errorMessage,
+  reducedMotion,
+  onComplete,
+}) => {
+  const [formData, setFormData] = useState<RegisterFormData>(initialData);
   const [honeypot, setHoneypot] = useState('');
-  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
-  const [formState, setFormState] = useState<FormState>('idle');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [fallbackWaUrl, setFallbackWaUrl] = useState('');
+  const [errors, setErrors] = useState<Partial<Record<keyof RegisterFormData, string>>>(
+    initialErrors || {}
+  );
+
+  useEffect(() => {
+    if (initialErrors && Object.keys(initialErrors).length > 0) {
+      setErrors(initialErrors);
+    }
+  }, [initialErrors]);
+
+  const handleFieldChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => {
+      if (prev[name as keyof RegisterFormData]) {
+        return { ...prev, [name]: undefined };
+      }
+      return prev;
+    });
+  }, []);
+
+  const handleConsentChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    setFormData((prev) => ({ ...prev, consent: checked }));
+    setErrors((prev) => {
+      if (prev.consent) {
+        return { ...prev, consent: undefined };
+      }
+      return prev;
+    });
+  }, []);
 
   const validate = (): boolean => {
-    const errs: Partial<Record<keyof FormData, string>> = {};
+    const errs: Partial<Record<keyof RegisterFormData, string>> = {};
 
-    const nombreClean = formData.fullName.trim();
-    if (!nombreClean || nombreClean.length < 3) {
-      errs.fullName = 'Ingresa tu nombre completo (mínimo 3 caracteres)';
-    }
-
-    const correoClean = formData.email.trim();
+    const correoClean = formData.email.trim().toLowerCase();
     if (!correoClean || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correoClean)) {
       errs.email = 'Ingresa un correo electrónico válido';
     }
 
-    const phoneNormalized = normalizePhone(formData.phone);
-    if (formData.phone.trim().length > 0 && !phoneNormalized) {
-      errs.phone = `Número colombiano no válido (ej. ${COMPANY_INFO.phoneDisplay} o 10 dígitos)`;
-    }
-
-    const mensajeClean = formData.message.trim();
-    if (!mensajeClean || mensajeClean.length < 10) {
-      errs.message = 'Por favor escribe al menos 10 caracteres';
-    } else if (mensajeClean.length > 1000) {
-      errs.message = 'El mensaje no debe exceder los 1000 caracteres';
+    const usuarioClean = formData.username.trim();
+    if (!usuarioClean) {
+      errs.username = 'Ingresa un nombre de usuario';
+    } else if (usuarioClean.length < 4) {
+      errs.username = 'El usuario debe tener mínimo 4 caracteres';
+    } else if (usuarioClean.length > 20) {
+      errs.username = 'El usuario no puede superar 20 caracteres';
+    } else if (/\s/.test(usuarioClean)) {
+      errs.username = 'El usuario no puede contener espacios';
+    } else if (!/^[a-zA-Z0-9_]{4,20}$/.test(usuarioClean)) {
+      errs.username = 'Solo se permiten letras, números y guion bajo';
     }
 
     if (!formData.consent) {
-      errs.consent = 'Debes aceptar la política de tratamiento de datos para continuar';
+      errs.consent = 'Debes aceptar los Términos y Condiciones para continuar';
     }
 
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name as keyof FormData]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }));
-    }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+    onComplete(formData, honeypot);
   };
 
-  const handleSubmit = async (e?: React.FormEvent) => {
+  return (
+    <motion.form
+      key="step-1"
+      initial={reducedMotion ? { opacity: 1 } : { opacity: 0, x: -16 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={reducedMotion ? { opacity: 1 } : { opacity: 0, x: 16 }}
+      transition={{ duration: 0.22, ease: 'easeInOut' }}
+      onSubmit={handleSubmit}
+      noValidate
+      className="flex flex-col gap-4"
+    >
+      <div>
+        <div className="flex items-center gap-2 mb-1">
+          <span className="font-mono text-[9px] uppercase tracking-widest text-[#FF6A13] glass rounded-full px-2 py-0.5 border border-[#FF6A13]/20">
+            Paso 1 de 2
+          </span>
+        </div>
+        <h3 className="font-display font-semibold text-lg text-[#F5F1EC] mb-1">
+          Registro de Worker
+        </h3>
+        <p className="text-xs text-[#A89F98]">
+          Ingresa tu correo y usuario para formar parte de la plataforma.
+        </p>
+      </div>
+
+      {/* Campo honeypot anti-bot oculto */}
+      <div className="hidden" aria-hidden="true">
+        <label htmlFor="company_fax">Favor no completar este campo de control:</label>
+        <input
+          type="text"
+          id="company_fax"
+          name="company_fax"
+          tabIndex={-1}
+          autoComplete="off"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
+        />
+      </div>
+
+      {/* 1. Correo electrónico */}
+      <Field
+        id="correo"
+        name="email"
+        label="Correo electrónico *"
+        type="email"
+        placeholder="hola@ejemplo.com"
+        maxLength={100}
+        value={formData.email}
+        error={errors.email}
+        onChange={handleFieldChange}
+        autoComplete="email"
+      />
+
+      {/* 2. Nombre de usuario */}
+      <div>
+        <Field
+          id="usuario"
+          name="username"
+          label="Nombre de usuario *"
+          type="text"
+          placeholder="usuario_hc"
+          maxLength={20}
+          value={formData.username}
+          error={errors.username}
+          onChange={handleFieldChange}
+          autoComplete="username"
+        />
+        <div className="flex justify-between items-center mt-1 px-1">
+          <span className="text-[10px] text-[#A89F98]/60">Sin espacios (4 a 20 caracteres)</span>
+          <span className="font-mono text-[10px] text-[#A89F98]/50">
+            {formData.username.length}/20
+          </span>
+        </div>
+      </div>
+
+      {/* 3. Checkbox de términos y condiciones */}
+      <div className="pt-1">
+        <div className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            id="consent"
+            name="consent"
+            checked={formData.consent}
+            onChange={handleConsentChange}
+            className="mt-1 w-4 h-4 rounded border-white/20 bg-black/40 text-[#FF6A13] focus:ring-[#FF6A13] focus:ring-offset-0 cursor-pointer accent-[#FF6A13]"
+            aria-invalid={Boolean(errors.consent)}
+            aria-describedby={errors.consent ? 'consent-error' : undefined}
+          />
+          <label htmlFor="consent" className="text-xs text-[#A89F98] leading-relaxed cursor-pointer select-none">
+            Acepto los{' '}
+            <a
+              href="/terminos"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#FF6A13] hover:text-[#FFB020] underline transition-colors font-medium"
+            >
+              Términos y Condiciones
+            </a>{' '}
+            y la{' '}
+            <a
+              href="/privacidad"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#FF6A13] hover:text-[#FFB020] underline transition-colors font-medium"
+            >
+              Política de Privacidad
+            </a>{' '}
+            de HOT COMPANY.
+          </label>
+        </div>
+        {errors.consent && (
+          <p id="consent-error" role="alert" className="mt-1.5 flex items-center gap-1 text-xs text-[#E10600]">
+            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={1.5} />
+            {errors.consent}
+          </p>
+        )}
+      </div>
+
+      {/* Mensaje de error general si aplica */}
+      {errorMessage && (
+        <div className="p-3 rounded-xl glass border border-[#E10600]/40 bg-[#E10600]/10 flex items-start gap-2 text-xs text-[#F5F1EC]">
+          <AlertCircle className="w-4 h-4 text-[#E10600] flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+          <span>{errorMessage}</span>
+        </div>
+      )}
+
+      <Button
+        type="submit"
+        variant="primary"
+        size="lg"
+        isFullWidth
+        icon={<ArrowRight className="w-4 h-4" strokeWidth={1.5} />}
+      >
+        Registrarme
+      </Button>
+
+      <p className="text-[11px] text-center text-[#A89F98]/60">
+        Al continuar definirás tu contraseña para activar tu cuenta.
+      </p>
+    </motion.form>
+  );
+};
+
+export const Contact: React.FC = () => {
+  const reducedMotion = useReducedMotion();
+
+  // Estados del Paso 1
+  const [formData, setFormData] = useState<RegisterFormData>({
+    email: '',
+    username: '',
+    consent: false,
+  });
+  const [registeredUsername, setRegisteredUsername] = useState('');
+  const [errors, setErrors] = useState<Partial<Record<keyof RegisterFormData, string>>>({});
+  const [formState, setFormState] = useState<FormState>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [fallbackWaUrl, setFallbackWaUrl] = useState('');
+
+  // Estado del flujo de registro en dos pasos (inline)
+  const [step, setStep] = useState<1 | 2>(1);
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState<{ password?: string; confirmPassword?: string }>({});
+  const [modalErrorMessage, setModalErrorMessage] = useState('');
+
+  const handleStep1Complete = (step1Data: RegisterFormData, honeypotValue: string) => {
+    setFormData(step1Data);
+
+    // Honeypot anti-bot: si el campo oculto tiene valor, simula éxito silencioso
+    if (honeypotValue.trim().length > 0) {
+      setRegisteredUsername(step1Data.username.trim());
+      setFormState('success');
+      return;
+    }
+
+    // Paso 1 válido -> Avanzar al paso 2 inline
+    setErrors({});
+    setErrorMessage('');
+    setModalErrorMessage('');
+    setPasswordErrors({});
+    setStep(2);
+  };
+
+  // Submit del Paso 2: Valida contraseñas y dispara el único POST al endpoint
+  const handlePasswordSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
-    if (!validate()) return;
+    const pErrors: { password?: string; confirmPassword?: string } = {};
 
-    // Honeypot anti-bot check: si el campo oculto tiene valor, simula envío silencioso
-    if (honeypot.trim().length > 0) {
-      setFormState('success');
+    if (!password) {
+      pErrors.password = 'Ingresa una contraseña';
+    } else if (password.length < 8) {
+      pErrors.password = 'La contraseña debe tener al menos 8 caracteres';
+    }
+
+    if (!confirmPassword) {
+      pErrors.confirmPassword = 'Confirma tu contraseña';
+    } else if (password !== confirmPassword) {
+      pErrors.confirmPassword = 'Las contraseñas no coinciden';
+    }
+
+    if (Object.keys(pErrors).length > 0) {
+      setPasswordErrors(pErrors);
       return;
     }
 
     const endpoint = import.meta.env.VITE_FORM_ENDPOINT?.trim();
 
-    // Respaldo por WhatsApp si VITE_FORM_ENDPOINT no está configurado (sin falso éxito)
+    // Respaldo por WhatsApp si VITE_FORM_ENDPOINT no está configurado
     if (!endpoint) {
-      const telText = normalizePhone(formData.phone) || 'No proporcionado';
-      const waMessage = `Hola HOT COMPANY S.A.S., me gustaría ponerme en contacto.\n\n*Nombre:* ${formData.fullName.trim()}\n*Correo:* ${formData.email.trim().toLowerCase()}\n*Teléfono:* ${telText}\n*Mensaje:* ${formData.message.trim()}`;
+      const waMessage = `Hola HOT COMPANY S.A.S., deseo registrarme como WORKER en la plataforma.\n\n*Usuario:* ${formData.username.trim()}\n*Correo:* ${formData.email.trim().toLowerCase()}`;
       const waUrl = `https://wa.me/${COMPANY_INFO.whatsappNumber}?text=${encodeURIComponent(waMessage)}`;
 
       setFallbackWaUrl(waUrl);
+      setStep(1);
       setFormState('whatsapp_fallback');
       window.open(waUrl, '_blank', 'noopener,noreferrer');
       return;
     }
 
     setFormState('loading');
-    setErrorMessage('');
+    setModalErrorMessage('');
 
-    const payload: ContactPayload = {
-      fullName: formData.fullName.trim(),
+    const payload: RegisterPayload = {
+      userType: 'WORKER',
       email: formData.email.trim().toLowerCase(),
-      phone: normalizePhone(formData.phone) ?? '',
-      message: formData.message.trim(),
-      privacyPolicyAccepted: formData.consent,
+      // TODO: confirmar con backend si username debe ser case-sensitive o
+      // normalizado — por ahora se envía en minúsculas por seguridad.
+      username: formData.username.trim().toLowerCase(),
+      password,
+      acceptedTerms: formData.consent,
+      termsVersion: TERMS_VERSION,
     };
 
     const controller = new AbortController();
@@ -232,36 +461,97 @@ export const Contact: React.FC = () => {
 
       clearTimeout(timeoutId);
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        const errDetail =
-          data?.error ||
-          data?.errors?.[0]?.message ||
-          'El servicio no pudo procesar tu mensaje en este momento. Por favor reintenta o contáctanos por WhatsApp.';
-        throw new Error(errDetail);
+      if (res.status === 201 || res.ok) {
+        setRegisteredUsername(formData.username.trim());
+        setStep(1);
+        setPassword('');
+        setConfirmPassword('');
+        setFormState('success');
+        setFormData({ email: '', username: '', consent: false });
+        setErrors({});
+        setErrorMessage('');
+        setModalErrorMessage('');
+        return;
       }
 
-      setFormState('success');
-      setFormData({ fullName: '', email: '', phone: '', message: '', consent: false });
-      setHoneypot('');
+      // Manejo de error 400 Bad Request (VALIDATION_ERROR)
+      const data: ValidationErrorResponse = await res.json().catch(() => ({}));
+
+      if (res.status === 400 && data?.fields && Array.isArray(data.fields) && data.fields.length > 0) {
+        const step1Errors: Partial<Record<keyof RegisterFormData, string>> = {};
+        const step2Errors: { password?: string; confirmPassword?: string } = {};
+        const unmappedMessages: string[] = [];
+
+        let hasStep1Error = false;
+
+        for (const item of data.fields) {
+          if (item.field === 'email') {
+            step1Errors.email = item.message;
+            hasStep1Error = true;
+          } else if (item.field === 'username') {
+            step1Errors.username = item.message;
+            hasStep1Error = true;
+          } else if (
+            item.field === 'acceptedTerms' ||
+            item.field === 'consent' ||
+            item.field === 'termsVersion'
+          ) {
+            step1Errors.consent = item.message;
+            hasStep1Error = true;
+          } else if (item.field === 'password') {
+            step2Errors.password = item.message;
+          } else {
+            unmappedMessages.push(item.message);
+          }
+        }
+
+        if (hasStep1Error) {
+          // Si el error corresponde al paso 1 (ej. correo ya registrado), regresar al paso 1
+          setErrors(step1Errors);
+          setStep(1);
+          setErrorMessage(
+            unmappedMessages.length > 0
+              ? unmappedMessages.join('. ')
+              : 'Por favor verifica los datos ingresados en el primer paso.'
+          );
+        } else {
+          // Si el error es de contraseña o no mapeado, mostrarlo dentro del modal
+          setPasswordErrors(step2Errors);
+          if (unmappedMessages.length > 0) {
+            setModalErrorMessage(unmappedMessages.join('. '));
+          } else if (Object.keys(step2Errors).length === 0 && data.message) {
+            setModalErrorMessage(data.message);
+          }
+        }
+
+        setFormState('idle');
+        return;
+      }
+
+      // Otro error del servidor (409 Conflict, 500, etc.)
+      const errDetail =
+        data?.message ||
+        data?.error ||
+        'El servicio no pudo procesar tu registro en este momento. Por favor reintenta o contáctanos por WhatsApp.';
+      setModalErrorMessage(errDetail);
+      setFormState('idle');
     } catch (err: unknown) {
       clearTimeout(timeoutId);
       if (err instanceof Error && err.name === 'AbortError') {
-        setErrorMessage(
+        setModalErrorMessage(
           'La solicitud superó el límite de espera (10 segundos). Por favor reintenta o comunícate vía WhatsApp.'
         );
       } else if (err instanceof Error) {
-        setErrorMessage(err.message || 'Error de conexión al enviar el formulario.');
+        setModalErrorMessage(err.message || 'Error de conexión al enviar el registro.');
       } else {
-        setErrorMessage('Ocurrió un error inesperado al procesar la solicitud.');
+        setModalErrorMessage('Ocurrió un error inesperado al procesar la solicitud.');
       }
-      setFormState('error');
+      setFormState('idle');
     }
   };
 
   const getWaPrefilledUrl = () => {
-    const telText = normalizePhone(formData.phone) || 'No proporcionado';
-    const waMessage = `Hola HOT COMPANY S.A.S., intento enviar una consulta desde la web.\n\n*Nombre:* ${formData.fullName.trim()}\n*Correo:* ${formData.email.trim().toLowerCase()}\n*Teléfono:* ${telText}\n*Mensaje:* ${formData.message.trim()}`;
+    const waMessage = `Hola HOT COMPANY S.A.S., intento registrarme como WORKER desde la web.\n\n*Usuario:* ${formData.username.trim()}\n*Correo:* ${formData.email.trim().toLowerCase()}`;
     return `https://wa.me/${COMPANY_INFO.whatsappNumber}?text=${encodeURIComponent(waMessage)}`;
   };
 
@@ -324,7 +614,7 @@ export const Contact: React.FC = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="glass rounded-[32px] p-6 sm:p-8"
+            className="glass rounded-[32px] p-6 sm:p-8 min-h-[530px] sm:min-h-[550px] flex flex-col justify-start"
           >
             {/* 1. Éxito Real con Endpoint */}
             {formState === 'success' && (
@@ -333,16 +623,76 @@ export const Contact: React.FC = () => {
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: 'spring', damping: 12, stiffness: 200 }}
-                  className="w-16 h-16 rounded-2xl glass-tint-warm flex items-center justify-center"
+                  className="relative w-16 h-16 rounded-2xl glass-tint-warm flex items-center justify-center p-2 border border-[#FF6A13]/40"
+                  style={{
+                    background: 'rgba(255, 106, 19, 0.15)',
+                    boxShadow: '0 0 24px rgba(255, 106, 19, 0.35)',
+                  }}
                 >
-                  <CheckCircle2 className="w-8 h-8 text-[#4ADE80]" strokeWidth={1.5} />
+                  <img
+                    src="/brand/logo.jpeg"
+                    alt="HOT COMPANY dado"
+                    className="w-full h-full object-contain"
+                    style={{ mixBlendMode: 'screen', transform: 'scale(1.1)' }}
+                  />
+                  <div
+                    className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#25D366] flex items-center justify-center shadow-lg border border-[#0A0A0B]"
+                    aria-hidden="true"
+                  >
+                    <Check className="w-3 h-3 text-[#0A0A0B] stroke-[3]" />
+                  </div>
                 </motion.div>
-                <h3 className="font-display font-bold text-xl text-[#F5F1EC]">¡Mensaje recibido con éxito!</h3>
-                <p className="text-sm text-[#A89F98] max-w-sm">
-                  Nuestro equipo revisará tu requerimiento y se comunicará contigo vía correo o WhatsApp a la mayor brevedad.
+
+                {/* // TODO MARKETING: confirmar con el equipo de producto/marketing el copy final de bienvenida y beneficios en Credihots antes de producción. */}
+                <h3 className="font-display font-bold text-xl text-[#F5F1EC]">
+                  {registeredUsername
+                    ? `¡Listo, ${registeredUsername}! Ya eres parte de HotCompany 🎲`
+                    : '¡Listo! Ya eres parte de HotCompany 🎲'}
+                </h3>
+
+                <p className="text-sm text-[#A89F98] max-w-sm leading-relaxed">
+                  Por registrarte como Worker, acabas de desbloquear 10.000 Credihots
                 </p>
-                <Button variant="secondary" size="sm" onClick={() => setFormState('idle')}>
-                  Enviar otro mensaje
+
+                {/* Badge visual para el monto en pesos (estilo balance Credihots de la app) */}
+                <div
+                  className="w-full max-w-xs mx-auto px-4 py-2.5 rounded-2xl flex items-center justify-center gap-2 text-center relative overflow-hidden border border-[#E10600]/40 my-0.5"
+                  style={{
+                    background: 'linear-gradient(135deg, #E10600 0%, #B80400 100%)',
+                    boxShadow: '0 8px 24px -4px rgba(225, 6, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
+                  }}
+                >
+                  <span className="font-display font-extrabold text-2xl sm:text-3xl text-white tracking-tight">
+                    $10.000
+                  </span>
+                  <span className="font-sans text-xs sm:text-sm font-semibold text-white/80 tracking-wide uppercase">
+                    COP
+                  </span>
+                  <span className="font-sans text-xs sm:text-sm font-medium text-white/95">
+                    ¡son tuyos!
+                  </span>
+                </div>
+
+                <p className="text-sm text-[#A89F98] max-w-sm leading-relaxed">
+                  Pronto vas a poder convertirlos y seguir ganando más dentro de la app.
+                </p>
+
+                <p className="text-xs text-[#A89F98]/70 max-w-sm leading-relaxed">
+                  Recuerda tu correo y usuario — son tu acceso. 😘
+                </p>
+
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setFormState('idle');
+                    setFormData({ email: '', username: '', consent: false });
+                    setRegisteredUsername('');
+                    setErrors({});
+                    setErrorMessage('');
+                  }}
+                >
+                  Enviar otro registro
                 </Button>
               </div>
             )}
@@ -361,7 +711,7 @@ export const Contact: React.FC = () => {
                 </motion.div>
                 <h3 className="font-display font-bold text-xl text-[#F5F1EC]">Conectando con WhatsApp</h3>
                 <p className="text-sm text-[#A89F98] max-w-sm leading-relaxed">
-                  Los datos de tu consulta han sido preparados para enviarse directamente a nuestro canal oficial de WhatsApp.
+                  Los datos de tu registro han sido preparados para enviarse directamente a nuestro canal oficial de WhatsApp.
                 </p>
 
                 {fallbackWaUrl && (
@@ -383,7 +733,7 @@ export const Contact: React.FC = () => {
                   size="sm"
                   onClick={() => {
                     setFormState('idle');
-                    setFormData({ fullName: '', email: '', phone: '', message: '', consent: false });
+                    setFormData({ email: '', username: '', consent: false });
                   }}
                 >
                   Volver al formulario
@@ -403,7 +753,7 @@ export const Contact: React.FC = () => {
                 >
                   <AlertCircle className="w-8 h-8 text-[#E10600]" strokeWidth={1.5} />
                 </motion.div>
-                <h3 className="font-display font-bold text-xl text-[#F5F1EC]">No se pudo enviar el mensaje</h3>
+                <h3 className="font-display font-bold text-xl text-[#F5F1EC]">No se pudo completar el registro</h3>
                 <p className="text-sm text-[#A89F98] max-w-sm leading-relaxed">
                   {errorMessage || 'Ocurrió un problema de comunicación al procesar tu solicitud.'}
                 </p>
@@ -412,10 +762,13 @@ export const Contact: React.FC = () => {
                   <Button
                     variant="primary"
                     size="sm"
-                    onClick={() => handleSubmit()}
+                    onClick={() => {
+                      setFormState('idle');
+                      setStep(2);
+                    }}
                     icon={<RotateCw className="w-3.5 h-3.5" strokeWidth={1.5} />}
                   >
-                    Reintentar envío
+                    Reintentar registro
                   </Button>
 
                   <Button
@@ -427,7 +780,7 @@ export const Contact: React.FC = () => {
                     size="sm"
                     icon={<WhatsAppIcon size={16} />}
                   >
-                    Enviar por WhatsApp
+                    Consultar por WhatsApp
                   </Button>
                 </div>
 
@@ -441,143 +794,157 @@ export const Contact: React.FC = () => {
               </div>
             )}
 
-            {/* 4. Formulario (Idle / Loading) */}
+            {/* 4. Formulario de Registro en 2 Pasos (Idle / Loading) */}
             {(formState === 'idle' || formState === 'loading') && (
-              <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-                <h3 className="font-display font-semibold text-lg text-[#F5F1EC] mb-1">
-                  Cuéntanos sobre tu proyecto
-                </h3>
-
-                {/* Campo honeypot anti-bot oculto */}
-                <div className="hidden" aria-hidden="true">
-                  <label htmlFor="company_fax">Favor no completar este campo de control:</label>
-                  <input
-                    type="text"
-                    id="company_fax"
-                    name="company_fax"
-                    tabIndex={-1}
-                    autoComplete="off"
-                    value={honeypot}
-                    onChange={(e) => setHoneypot(e.target.value)}
+              <div className="min-h-[460px] sm:min-h-[475px] flex flex-col justify-start">
+                <AnimatePresence mode="wait" initial={false}>
+                {step === 1 ? (
+                  <Step1Form
+                    key="step-1"
+                    initialData={formData}
+                    initialErrors={errors}
+                    errorMessage={errorMessage}
+                    reducedMotion={reducedMotion}
+                    onComplete={handleStep1Complete}
                   />
-                </div>
+                ) : (
+                  <motion.form
+                    key="step-2"
+                    initial={reducedMotion ? { opacity: 1 } : { opacity: 0, x: 16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={reducedMotion ? { opacity: 1 } : { opacity: 0, x: -16 }}
+                    transition={{ duration: 0.22, ease: 'easeInOut' }}
+                    onSubmit={handlePasswordSubmit}
+                    noValidate
+                    className="flex flex-col gap-4"
+                  >
+                    <div>
+                      <div className="flex items-center gap-3 mb-3">
+                        <div
+                          className="w-10 h-10 rounded-2xl glass-tint-warm flex items-center justify-center flex-shrink-0"
+                          style={{ background: 'rgba(255, 106, 19, 0.15)', border: '1px solid rgba(255, 106, 19, 0.35)' }}
+                        >
+                          <Lock className="w-5 h-5 text-[#FF6A13]" strokeWidth={1.5} />
+                        </div>
+                        <div>
+                          <span className="font-mono text-[9px] uppercase tracking-widest text-[#FF6A13]">Paso 2 de 2</span>
+                          <h3 id="password-step-title" className="font-display font-bold text-lg text-[#F5F1EC] leading-tight">
+                            Crea tu contraseña
+                          </h3>
+                        </div>
+                      </div>
 
-                <Field
-                  id="nombre"
-                  name="fullName"
-                  label="Nombre completo *"
-                  placeholder="Carlos Mendoza"
-                  maxLength={100}
-                  value={formData.fullName}
-                  error={errors.fullName}
-                  onChange={handleChange}
-                />
+                      <p className="text-sm text-[#A89F98] leading-relaxed">
+                        Define la contraseña de acceso para tu cuenta de Worker con usuario{' '}
+                        <span className="text-[#F5F1EC] font-semibold">@{formData.username.trim()}</span>.
+                        {' '}Con esta clave vas a poder entrar a la app cuando esté disponible — ya estás a un paso de ser parte de HotCompany.
+                      </p>
+                    </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Field
-                    id="correo"
-                    name="email"
-                    label="Correo electrónico *"
-                    type="email"
-                    placeholder="hola@empresa.com"
-                    maxLength={100}
-                    value={formData.email}
-                    error={errors.email}
-                    onChange={handleChange}
-                  />
-                  <Field
-                    id="telefono"
-                    name="phone"
-                    label="Teléfono / WhatsApp (Opcional)"
-                    type="tel"
-                    placeholder={COMPANY_INFO.phoneDisplay}
-                    maxLength={20}
-                    value={formData.phone}
-                    error={errors.phone}
-                    onChange={handleChange}
-                  />
-                </div>
-
-                <div>
-                  <Field
-                    id="mensaje"
-                    name="message"
-                    label="¿En qué podemos ayudarte? *"
-                    placeholder="Cuéntanos si eres usuario, worker independiente o representas a un hotel aliado..."
-                    maxLength={1000}
-                    value={formData.message}
-                    error={errors.message}
-                    onChange={handleChange}
-                    isTextarea
-                  />
-                  <div className="flex justify-end mt-1 px-1">
-                    <span className="font-mono text-[10px] text-[#A89F98]/50">
-                      {formData.message.length}/1000
-                    </span>
-                  </div>
-                </div>
-
-                {/* Checkbox de consentimiento obligatorio (Ley 1581 de 2012) */}
-                <div className="pt-1">
-                  <div className="flex items-start gap-3">
-                    <input
-                      type="checkbox"
-                      id="consent"
-                      name="consent"
-                      checked={formData.consent}
+                    <Field
+                      id="inline-password"
+                      name="password"
+                      label="Contraseña *"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Mínimo 8 caracteres"
+                      value={password}
+                      error={passwordErrors.password}
                       onChange={(e) => {
-                        setFormData((prev) => ({ ...prev, consent: e.target.checked }));
-                        if (errors.consent) {
-                          setErrors((prev) => ({ ...prev, consent: undefined }));
+                        setPassword(e.target.value);
+                        if (passwordErrors.password) {
+                          setPasswordErrors((prev) => ({ ...prev, password: undefined }));
                         }
                       }}
-                      className="mt-1 w-4 h-4 rounded border-white/20 bg-black/40 text-[#FF6A13] focus:ring-[#FF6A13] focus:ring-offset-0 cursor-pointer accent-[#FF6A13]"
-                      aria-invalid={Boolean(errors.consent)}
-                      aria-describedby={errors.consent ? 'consent-error' : undefined}
+                      autoComplete="new-password"
+                      endAdornment={
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          className="p-1 text-[#A89F98] hover:text-[#F5F1EC] transition-colors focus:outline-none"
+                          aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                        >
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      }
                     />
-                    <label htmlFor="consent" className="text-xs text-[#A89F98] leading-relaxed cursor-pointer select-none">
-                      Acepto el tratamiento de mis datos personales conforme a la{' '}
-                      <a
-                        href="/privacidad"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[#FF6A13] hover:text-[#FFB020] underline transition-colors font-medium"
+
+                    <Field
+                      id="inline-confirm-password"
+                      name="confirmPassword"
+                      label="Confirmar contraseña *"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      placeholder="Repite tu contraseña"
+                      value={confirmPassword}
+                      error={passwordErrors.confirmPassword}
+                      onChange={(e) => {
+                        setConfirmPassword(e.target.value);
+                        if (passwordErrors.confirmPassword) {
+                          setPasswordErrors((prev) => ({ ...prev, confirmPassword: undefined }));
+                        }
+                      }}
+                      autoComplete="new-password"
+                      endAdornment={
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword((prev) => !prev)}
+                          className="p-1 text-[#A89F98] hover:text-[#F5F1EC] transition-colors focus:outline-none"
+                          aria-label={showConfirmPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                        >
+                          {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      }
+                    />
+
+                    <div className="flex items-center gap-2 px-1">
+                      <span className="text-[11px] text-[#A89F98]/70">Requisito: mínimo 8 caracteres</span>
+                    </div>
+
+                    {modalErrorMessage && (
+                      <div className="p-3 rounded-xl glass border border-[#E10600]/40 bg-[#E10600]/10 flex items-start gap-2 text-xs text-[#F5F1EC]">
+                        <AlertCircle className="w-4 h-4 text-[#E10600] flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+                        <span>{modalErrorMessage}</span>
+                      </div>
+                    )}
+
+                    <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="md"
+                        onClick={() => {
+                          setStep(1);
+                          setPassword('');
+                          setConfirmPassword('');
+                          setPasswordErrors({});
+                          setModalErrorMessage('');
+                        }}
+                        disabled={formState === 'loading'}
                       >
-                        Política de Privacidad
-                      </a>{' '}
-                      (Ley 1581 de 2012 de Colombia).
-                    </label>
-                  </div>
-                  {errors.consent && (
-                    <p id="consent-error" role="alert" className="mt-1.5 flex items-center gap-1 text-xs text-[#E10600]">
-                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={1.5} />
-                      {errors.consent}
-                    </p>
-                  )}
-                </div>
+                        Volver
+                      </Button>
 
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="lg"
-                  isFullWidth
-                  disabled={formState === 'loading'}
-                  icon={
-                    formState === 'loading' ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4" strokeWidth={1.5} />
-                    )
-                  }
-                >
-                  {formState === 'loading' ? 'Enviando...' : 'Enviar Mensaje'}
-                </Button>
-
-                <p className="text-[11px] text-center text-[#A89F98]/60">
-                  Tratamos tus datos conforme a nuestra Política de Privacidad.
-                </p>
-              </form>
-            )}
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        size="md"
+                        isFullWidth
+                        disabled={formState === 'loading'}
+                        icon={
+                          formState === 'loading' ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <UserPlus className="w-4 h-4" strokeWidth={1.5} />
+                          )
+                        }
+                      >
+                        {formState === 'loading' ? 'Completando...' : 'Completar registro'}
+                      </Button>
+                    </div>
+                  </motion.form>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
           </motion.div>
 
           {/* ── Contact Panel ──────────────────────────── */}
@@ -668,6 +1035,8 @@ export const Contact: React.FC = () => {
           </div>
         </div>
       </div>
+
+
     </section>
   );
 };
