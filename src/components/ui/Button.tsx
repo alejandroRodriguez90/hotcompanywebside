@@ -164,6 +164,7 @@ export const Button = React.forwardRef<HTMLElement, ButtonProps>(
     `.trim();
 
     const inlineStyles: React.CSSProperties = {
+      transition: 'border-color 0.3s ease-out, box-shadow 0.3s ease-out',
       boxShadow: isPrimary
         ? isHovered
           ? '0 0 28px -4px rgba(255,106,19,0.55), 0 10px 30px -10px rgba(225,6,0,0.4), inset 0 1px 1px rgba(255,200,120,0.6), inset 0 -2px 4px rgba(0,0,0,0.9)'
