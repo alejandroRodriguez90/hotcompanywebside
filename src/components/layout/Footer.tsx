@@ -35,7 +35,7 @@ export const Footer: React.FC = () => {
               </div>
               <div>
                 <h3 className="font-display font-semibold text-base tracking-[0.18em] text-[#F5F1EC] uppercase">Hot Company</h3>
-                <p className="font-mono text-[9px] text-[#FF6A13] tracking-widest">S.A.S. · NIT {COMPANY_INFO.nit}</p>
+                <p className="font-mono text-[9px] text-[#FF6A13] tracking-widest">S.A.S.</p>
               </div>
             </div>
 

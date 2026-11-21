@@ -52,8 +52,7 @@ hotcompany.webside/
 │   ├── _redirects              # Redirects de Netlify (301 términos + fallback SPA)
 │   ├── _headers                # Cabeceras de seguridad y CSP por ruta (Netlify)
 │   ├── brand/                  # Activos de marca
-│   │   ├── logo.jpeg           # Logo principal (dado 3D, fondo negro)
-│   │   └── Logo-removebg-preview.jpg
+│   │   └── logo.jpeg           # Logo principal (dado 3D, fondo negro)
 │   ├── images/
 │   │   └── carousel/           # Imágenes del carrusel (HC1.webp ... HC6.webp)
 │   ├── videos/                 # Videos para el Hero
