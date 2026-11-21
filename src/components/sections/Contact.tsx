@@ -15,7 +15,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { COMPANY_INFO, CONTACT_CONTENT } from '../../lib/constants';
-import { API_BASE_URL, AUTH_REGISTER_URL } from '../../lib/api';
+import { API_BASE_URL, AUTH_REGISTER_URL, JSON_HEADERS } from '../../lib/api';
 import { PASSWORD_HINT, PASSWORD_MAX, getPasswordValidationError } from '../../lib/passwordPolicy';
 import { Button } from '../ui/Button';
 import { WhatsAppIcon } from '../ui/WhatsAppIcon';
@@ -541,9 +541,7 @@ export const Contact: React.FC = () => {
     try {
       const res = await fetch(AUTH_REGISTER_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: JSON_HEADERS,
         body: JSON.stringify(payload),
         signal: controller.signal,
       });

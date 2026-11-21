@@ -199,7 +199,7 @@ Ubicación: `src/components/ui/Marquee.tsx`
 
 ## 💬 Registro & WhatsApp
 
-- **Formulario conectado**: el registro se envía a `POST ${VITE_API_BASE_URL}/api/auth/register`. Si `VITE_API_BASE_URL` está vacía, activa un fallback directo y transparente a WhatsApp oficial (`+57 312 661 1763`).
+- **Formulario conectado**: el registro se envía a `POST ${VITE_API_BASE_URL}/api/v1/auth/register` (base: `https://api.hotcompany.app`, `Content-Type: application/json`). Si `VITE_API_BASE_URL` está vacía, activa un fallback directo y transparente a WhatsApp oficial (`+57 312 661 1763`).
 - **Contrato JSON (POST `Content-Type: application/json`)**: el body contiene exactamente estas 4 claves, sin campos extra:
   ```json
   {
@@ -230,7 +230,7 @@ Configura `VITE_API_BASE_URL` en **Netlify → Site configuration → Environmen
 # URL base del backend, sin barra final ni /api. Vacía = fallback a WhatsApp.
 VITE_API_BASE_URL=https://URL-DEL-BACKEND-AQUI
 ```
-La ruta de registro se construye automáticamente como `${VITE_API_BASE_URL}/api/auth/register` (sin `/v1`), normalizando barras finales.
+La ruta de registro se construye automáticamente como `${VITE_API_BASE_URL}/api/v1/auth/register`, normalizando barras finales. La consulta de términos usa `${VITE_API_BASE_URL}/api/v1/terms` (helper `fetchTerms`) con `Content-Type: application/json`.
 
 ### 2. Comandos de Compilación
 ```bash
@@ -271,7 +271,7 @@ El resultado se genera en la carpeta `dist/`.
 
 ## 📌 Pendientes y Aprobaciones del Equipo
 
-1. [ ] **Endpoint del formulario**: Recibir y configurar la URL base definitiva del backend en `VITE_API_BASE_URL`.
+1. [x] **Endpoint del formulario**: URL base definitiva configurada en `VITE_API_BASE_URL` (`https://api.hotcompany.app`) con rutas `/api/v1/auth/register` y `/api/v1/terms`.
 2. [ ] **Aprobación de copys comerciales**: Revisión de afirmaciones cuantitativas y legales (marcadas con `// TODO:` en `src/lib/constants.ts`).
 3. [ ] **Revisión legal**: Aprobación final con abogado del dominio y términos (marcados con `// TODO LEGAL:` en `src/lib/legal.ts`).
 4. [ ] **Asset de Open Graph**: Sustituir `public/og-image.png` por la versión definitiva de 1200×630 px.
