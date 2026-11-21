@@ -198,20 +198,20 @@ Ubicación: `src/components/ui/Marquee.tsx`
 
 ---
 
-## 💬 Contacto & WhatsApp
+## 💬 Registro & WhatsApp
 
-- **Formulario conectado**: Gestionado a través de `VITE_FORM_ENDPOINT`. En ausencia de endpoint, activa un fallback directo y transparente a WhatsApp oficial (`+57 312 661 1763`).
-- **Contrato JSON (POST `Content-Type: application/json`)**: el body contiene exactamente estas 5 claves, sin campos extra:
+- **Formulario conectado**: el registro se envía a `POST ${VITE_API_BASE_URL}/api/auth/register`. Si `VITE_API_BASE_URL` está vacía, activa un fallback directo y transparente a WhatsApp oficial (`+57 312 661 1763`).
+- **Contrato JSON (POST `Content-Type: application/json`)**: el body contiene exactamente estas 4 claves, sin campos extra:
   ```json
   {
-    "fullName": "string",
     "email": "string",
-    "phone": "+573001234567",
-    "message": "string",
-    "privacyPolicyAccepted": true
+    "username": "string",
+    "password": "string",
+    "role": "Worker | Hotel"
   }
   ```
-  `phone` se normaliza a formato internacional (+57XXXXXXXXXX); `privacyPolicyAccepted` solo se envía en `true` porque el consentimiento es obligatorio.
+  `confirmPassword` y el checkbox de términos se validan **solo en la UI** y no viajan en el body.
+- **Validaciones alineadas con la app móvil**: correo hasta 254 caracteres; usuario de 4 a 30 sin espacios; contraseña de 8 a 72 caracteres con al menos una letra y un número.
 - **Icono nativo**: SVG vectorial optimizado en `WhatsAppIcon.tsx`.
 
 ---
@@ -226,10 +226,12 @@ La configuración de despliegue vive en:
 - **`public/_headers`**: cabeceras de seguridad en `/*` (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`) y CSP **solo** en `/`, `/index.html`, `/privacidad` y `/terminos`. El CSP no se aplica en `/*` ni en `/desarrollo/*` para no bloquear las fuentes e iconos de la landing, que trae su propio CSP en una etiqueta `<meta>`. Incluye caché larga para `/assets/*`, `/images/*` y `/videos/*`.
 
 ### 1. Variables de Entorno
-Configura `VITE_FORM_ENDPOINT` en **Netlify → Site configuration → Environment variables**, o en un `.env.production` local **no versionado** (ya está en `.gitignore`):
+Configura `VITE_API_BASE_URL` en **Netlify → Site configuration → Environment variables**, o en un `.env.production` local **no versionado** (ya está en `.gitignore`):
 ```bash
-VITE_FORM_ENDPOINT=https://URL-DEL-ENDPOINT-AQUI
+# URL base del backend, sin barra final ni /api. Vacía = fallback a WhatsApp.
+VITE_API_BASE_URL=https://URL-DEL-BACKEND-AQUI
 ```
+La ruta de registro se construye automáticamente como `${VITE_API_BASE_URL}/api/auth/register` (sin `/v1`), normalizando barras finales.
 
 ### 2. Comandos de Compilación
 ```bash
@@ -254,7 +256,7 @@ El resultado se genera en la carpeta `dist/`.
 ## 📋 Checklist de Despliegue
 
 ### Pre-deploy:
-- [ ] Configurar `VITE_FORM_ENDPOINT` en Netlify (Environment variables) o en `.env.production` local, y recompilar con `npm run build`.
+- [ ] Configurar `VITE_API_BASE_URL` en Netlify (Environment variables) o en `.env.production` local, y recompilar con `npm run build`.
 - [ ] Verificar que `public/og-image.png` tenga una versión final de 1200×630 px (proporción 1.91:1) proporcionada por diseño.
 - [ ] Confirmar que el build genera `dist/_redirects`, `dist/_headers` y `dist/index.html`.
 - [ ] (Solo Hostinger) Confirmar que `dist/.htaccess` y `dist/desarrollo/.htaccess` estén presentes.
@@ -270,7 +272,7 @@ El resultado se genera en la carpeta `dist/`.
 
 ## 📌 Pendientes y Aprobaciones del Equipo
 
-1. [ ] **Endpoint del formulario**: Recibir y configurar la URL definitiva de Juan en `VITE_FORM_ENDPOINT`.
+1. [ ] **Endpoint del formulario**: Recibir y configurar la URL base definitiva del backend en `VITE_API_BASE_URL`.
 2. [ ] **Aprobación de copys comerciales**: Revisión de afirmaciones cuantitativas y legales (marcadas con `// TODO:` en `src/lib/constants.ts`).
 3. [ ] **Revisión legal**: Aprobación final con abogado del dominio y términos (marcados con `// TODO LEGAL:` en `src/lib/legal.ts`).
 4. [ ] **Asset de Open Graph**: Sustituir `public/og-image.png` por la versión definitiva de 1200×630 px.

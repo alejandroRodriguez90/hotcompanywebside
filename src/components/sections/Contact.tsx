@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Mail,
@@ -15,32 +15,38 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { COMPANY_INFO, CONTACT_CONTENT } from '../../lib/constants';
-import { TERMS_VERSION } from '../../lib/legal';
+import { API_BASE_URL, AUTH_REGISTER_URL } from '../../lib/api';
+import { PASSWORD_HINT, PASSWORD_MAX, getPasswordValidationError } from '../../lib/passwordPolicy';
 import { Button } from '../ui/Button';
 import { WhatsAppIcon } from '../ui/WhatsAppIcon';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 
+export type UserRole = 'Worker' | 'Hotel';
+
 interface RegisterFormData {
   email: string;
   username: string;
+  role: UserRole;
   consent: boolean;
 }
 
 type FormState = 'idle' | 'loading' | 'success' | 'error' | 'whatsapp_fallback';
 
 interface RegisterPayload {
-  userType: 'WORKER';
   email: string;
   username: string;
   password: string;
-  acceptedTerms: boolean;
-  termsVersion: string;
+  role: UserRole;
 }
 
 interface ValidationErrorResponse {
   status?: number;
   error?: string;
   message?: string;
+  success?: boolean;
+  /** Formato del contrato compartido: { "campo": "motivo" }. */
+  errors?: Record<string, string | string[]>;
+  /** Compatibilidad temporal con respuestas que aún usan lista de campos. */
   fields?: Array<{
     field: string;
     message: string;
@@ -147,18 +153,25 @@ const Step1Form: React.FC<Step1FormProps> = ({
     initialErrors || {}
   );
 
-  useEffect(() => {
-    if (initialErrors && Object.keys(initialErrors).length > 0) {
-      setErrors(initialErrors);
-    }
-  }, [initialErrors]);
-
   const handleFieldChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    if (name !== 'email' && name !== 'username') return;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => {
-      if (prev[name as keyof RegisterFormData]) {
+      if (prev[name]) {
         return { ...prev, [name]: undefined };
+      }
+      return prev;
+    });
+  }, []);
+
+  const handleRoleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const role = e.target.value as UserRole;
+    if (role !== 'Worker' && role !== 'Hotel') return;
+    setFormData((prev) => ({ ...prev, role }));
+    setErrors((prev) => {
+      if (prev.role) {
+        return { ...prev, role: undefined };
       }
       return prev;
     });
@@ -181,6 +194,8 @@ const Step1Form: React.FC<Step1FormProps> = ({
     const correoClean = formData.email.trim().toLowerCase();
     if (!correoClean || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correoClean)) {
       errs.email = 'Ingresa un correo electrónico válido';
+    } else if (correoClean.length > 254) {
+      errs.email = 'El correo no puede superar 254 caracteres';
     }
 
     const usuarioClean = formData.username.trim();
@@ -188,12 +203,16 @@ const Step1Form: React.FC<Step1FormProps> = ({
       errs.username = 'Ingresa un nombre de usuario';
     } else if (usuarioClean.length < 4) {
       errs.username = 'El usuario debe tener mínimo 4 caracteres';
-    } else if (usuarioClean.length > 20) {
-      errs.username = 'El usuario no puede superar 20 caracteres';
+    } else if (usuarioClean.length > 30) {
+      errs.username = 'El usuario no puede superar 30 caracteres';
     } else if (/\s/.test(usuarioClean)) {
       errs.username = 'El usuario no puede contener espacios';
-    } else if (!/^[a-zA-Z0-9_]{4,20}$/.test(usuarioClean)) {
+    } else if (!/^[a-zA-Z0-9_]{4,30}$/.test(usuarioClean)) {
       errs.username = 'Solo se permiten letras, números y guion bajo';
+    }
+
+    if (formData.role !== 'Worker' && formData.role !== 'Hotel') {
+      errs.role = 'Selecciona el tipo de cuenta';
     }
 
     if (!formData.consent) {
@@ -228,10 +247,10 @@ const Step1Form: React.FC<Step1FormProps> = ({
           </span>
         </div>
         <h3 className="font-display font-semibold text-lg text-[#F5F1EC] mb-1">
-          Registro de Worker
+          Crea tu cuenta
         </h3>
         <p className="text-xs text-[#A89F98]">
-          Ingresa tu correo y usuario para formar parte de la plataforma.
+          Indica tu tipo de cuenta e ingresa tu correo y usuario.
         </p>
       </div>
 
@@ -256,7 +275,7 @@ const Step1Form: React.FC<Step1FormProps> = ({
         label="Correo electrónico *"
         type="email"
         placeholder="hola@ejemplo.com"
-        maxLength={100}
+        maxLength={254}
         value={formData.email}
         error={errors.email}
         onChange={handleFieldChange}
@@ -271,21 +290,91 @@ const Step1Form: React.FC<Step1FormProps> = ({
           label="Nombre de usuario *"
           type="text"
           placeholder="usuario_hc"
-          maxLength={20}
+          maxLength={30}
           value={formData.username}
           error={errors.username}
           onChange={handleFieldChange}
           autoComplete="username"
         />
         <div className="flex justify-between items-center mt-1 px-1">
-          <span className="text-[10px] text-[#A89F98]/60">Sin espacios (4 a 20 caracteres)</span>
+          <span className="text-[10px] text-[#A89F98]/60">Sin espacios (4 a 30 caracteres)</span>
           <span className="font-mono text-[10px] text-[#A89F98]/50">
-            {formData.username.length}/20
+            {formData.username.length}/30
           </span>
         </div>
       </div>
 
-      {/* 3. Checkbox de términos y condiciones */}
+      {/* 3. Tipo de cuenta */}
+      <fieldset>
+        <legend className="font-sans text-xs font-semibold uppercase tracking-wider text-[#A89F98] mb-2">
+          Tipo de cuenta *
+        </legend>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {([
+            { value: 'Worker', title: 'Worker' },
+            { value: 'Hotel', title: 'Hotel' },
+          ] as const).map((option) => {
+            const selected = formData.role === option.value;
+            return (
+              <label
+                key={option.value}
+                className={`group relative flex min-h-[54px] cursor-pointer items-center justify-between gap-2 rounded-2xl border px-4 py-3 transition-all duration-200 focus-within:ring-2 focus-within:ring-[#FF6A13]/50 ${
+                  selected
+                    ? 'border-[#FF6A13] bg-[#FF6A13]/10 shadow-[0_0_0_1px_rgba(255,106,19,0.3),0_8px_24px_-14px_rgba(255,106,19,0.5)]'
+                    : 'glass border-white/12 hover:border-white/22 hover:bg-white/[0.03]'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="role"
+                  value={option.value}
+                  checked={selected}
+                  onChange={handleRoleChange}
+                  className="sr-only"
+                  aria-invalid={Boolean(errors.role)}
+                  aria-describedby={`role-status${errors.role ? ' role-error' : ''}`}
+                />
+                <span
+                  className={`font-display text-sm font-semibold transition-colors ${
+                    selected ? 'text-[#F5F1EC]' : 'text-[#A89F98] group-hover:text-[#F5F1EC]'
+                  }`}
+                >
+                  {option.title}
+                </span>
+                {selected && (
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#FF6A13]/30 bg-[#FF6A13]/10 px-2 py-[3px] font-mono text-[9px] font-medium uppercase tracking-wide text-[#FFB020]">
+                    <Check className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
+                    Activo
+                  </span>
+                )}
+              </label>
+            );
+          })}
+        </div>
+        <div
+          id="role-status"
+          role="status"
+          aria-live="polite"
+          className="mt-2.5 flex items-center gap-2 rounded-xl border border-[#FF6A13]/15 bg-[#FF6A13]/[0.04] px-3 py-2"
+        >
+          <span
+            className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#FFB020] shadow-[0_0_8px_rgba(255,176,32,0.6)]"
+            aria-hidden="true"
+          />
+          <p className="text-[11px] leading-relaxed text-[#A89F98]">
+            Rol activo: <span className="font-semibold text-[#FFB020]">{formData.role}</span>
+            <span className="text-[#A89F98]/70"> · verifica antes de continuar</span>
+          </p>
+        </div>
+        {errors.role && (
+          <p id="role-error" role="alert" className="mt-1.5 flex items-center gap-1 text-xs text-[#E10600]">
+            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={1.5} />
+            {errors.role}
+          </p>
+        )}
+      </fieldset>
+
+      {/* 4. Checkbox de términos y condiciones */}
       <div className="pt-1">
         <div className="flex items-start gap-3">
           <input
@@ -360,9 +449,11 @@ export const Contact: React.FC = () => {
   const [formData, setFormData] = useState<RegisterFormData>({
     email: '',
     username: '',
+    role: 'Worker',
     consent: false,
   });
   const [registeredUsername, setRegisteredUsername] = useState('');
+  const [registeredRole, setRegisteredRole] = useState<UserRole>('Worker');
   const [errors, setErrors] = useState<Partial<Record<keyof RegisterFormData, string>>>({});
   const [formState, setFormState] = useState<FormState>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -383,6 +474,7 @@ export const Contact: React.FC = () => {
     // Honeypot anti-bot: si el campo oculto tiene valor, simula éxito silencioso
     if (honeypotValue.trim().length > 0) {
       setRegisteredUsername(step1Data.username.trim());
+      setRegisteredRole(step1Data.role);
       setFormState('success');
       return;
     }
@@ -401,10 +493,9 @@ export const Contact: React.FC = () => {
 
     const pErrors: { password?: string; confirmPassword?: string } = {};
 
-    if (!password) {
-      pErrors.password = 'Ingresa una contraseña';
-    } else if (password.length < 8) {
-      pErrors.password = 'La contraseña debe tener al menos 8 caracteres';
+    const passwordError = getPasswordValidationError(password);
+    if (passwordError) {
+      pErrors.password = passwordError;
     }
 
     if (!confirmPassword) {
@@ -418,11 +509,9 @@ export const Contact: React.FC = () => {
       return;
     }
 
-    const endpoint = import.meta.env.VITE_FORM_ENDPOINT?.trim();
-
-    // Respaldo por WhatsApp si VITE_FORM_ENDPOINT no está configurado
-    if (!endpoint) {
-      const waMessage = `Hola HOT COMPANY S.A.S., deseo registrarme como WORKER en la plataforma.\n\n*Usuario:* ${formData.username.trim()}\n*Correo:* ${formData.email.trim().toLowerCase()}`;
+    // Respaldo por WhatsApp si la base de la API no está configurada
+    if (!API_BASE_URL) {
+      const waMessage = `Hola HOT COMPANY S.A.S., deseo registrarme como ${formData.role} en la plataforma.\n\n*Usuario:* ${formData.username.trim()}\n*Correo:* ${formData.email.trim().toLowerCase()}`;
       const waUrl = `https://wa.me/${COMPANY_INFO.whatsappNumber}?text=${encodeURIComponent(waMessage)}`;
 
       setFallbackWaUrl(waUrl);
@@ -435,22 +524,22 @@ export const Contact: React.FC = () => {
     setFormState('loading');
     setModalErrorMessage('');
 
+    // Contrato compartido: solo email, username, password y role.
+    // confirmPassword y la aceptación de términos se validan únicamente en la UI.
     const payload: RegisterPayload = {
-      userType: 'WORKER',
       email: formData.email.trim().toLowerCase(),
       // TODO: confirmar con backend si username debe ser case-sensitive o
       // normalizado — por ahora se envía en minúsculas por seguridad.
       username: formData.username.trim().toLowerCase(),
       password,
-      acceptedTerms: formData.consent,
-      termsVersion: TERMS_VERSION,
+      role: formData.role,
     };
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     try {
-      const res = await fetch(endpoint, {
+      const res = await fetch(AUTH_REGISTER_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -461,42 +550,57 @@ export const Contact: React.FC = () => {
 
       clearTimeout(timeoutId);
 
-      if (res.status === 201 || res.ok) {
+      const data: ValidationErrorResponse = await res.json().catch(() => ({}));
+
+      // Respuesta del contrato: { success, message? }. Se tolera un 2xx sin body.
+      if (res.ok && data?.success !== false) {
         setRegisteredUsername(formData.username.trim());
+        setRegisteredRole(formData.role);
         setStep(1);
         setPassword('');
         setConfirmPassword('');
         setFormState('success');
-        setFormData({ email: '', username: '', consent: false });
+        setFormData({ email: '', username: '', role: 'Worker', consent: false });
         setErrors({});
         setErrorMessage('');
         setModalErrorMessage('');
         return;
       }
 
-      // Manejo de error 400 Bad Request (VALIDATION_ERROR)
-      const data: ValidationErrorResponse = await res.json().catch(() => ({}));
+      // Errores por campo. Contrato: { message, errors: { campo: motivo } }.
+      // Se mantiene compatibilidad con { fields: [{ field, message }] }.
+      const fieldEntries: Array<{ field: string; message: string }> = [];
+      if (data?.errors && typeof data.errors === 'object') {
+        for (const [field, value] of Object.entries(data.errors)) {
+          const message = Array.isArray(value) ? value.filter(Boolean).join('. ') : value;
+          if (typeof message === 'string' && message.trim()) {
+            fieldEntries.push({ field, message });
+          }
+        }
+      } else if (Array.isArray(data?.fields)) {
+        for (const item of data.fields) {
+          if (item?.field && item?.message) {
+            fieldEntries.push(item);
+          }
+        }
+      }
 
-      if (res.status === 400 && data?.fields && Array.isArray(data.fields) && data.fields.length > 0) {
+      if (fieldEntries.length > 0) {
         const step1Errors: Partial<Record<keyof RegisterFormData, string>> = {};
         const step2Errors: { password?: string; confirmPassword?: string } = {};
         const unmappedMessages: string[] = [];
 
         let hasStep1Error = false;
 
-        for (const item of data.fields) {
+        for (const item of fieldEntries) {
           if (item.field === 'email') {
             step1Errors.email = item.message;
             hasStep1Error = true;
           } else if (item.field === 'username') {
             step1Errors.username = item.message;
             hasStep1Error = true;
-          } else if (
-            item.field === 'acceptedTerms' ||
-            item.field === 'consent' ||
-            item.field === 'termsVersion'
-          ) {
-            step1Errors.consent = item.message;
+          } else if (item.field === 'role' || item.field === 'userType') {
+            step1Errors.role = item.message;
             hasStep1Error = true;
           } else if (item.field === 'password') {
             step2Errors.password = item.message;
@@ -528,7 +632,17 @@ export const Contact: React.FC = () => {
         return;
       }
 
-      // Otro error del servidor (409 Conflict, 500, etc.)
+      // 409: correo o usuario ya registrado. El primer paso es donde se corrigen.
+      if (res.status === 409) {
+        setStep(1);
+        setErrorMessage(
+          data?.message || 'Ese correo o nombre de usuario ya está registrado.'
+        );
+        setFormState('idle');
+        return;
+      }
+
+      // Otro error del servidor (500, etc.)
       const errDetail =
         data?.message ||
         data?.error ||
@@ -539,7 +653,7 @@ export const Contact: React.FC = () => {
       clearTimeout(timeoutId);
       if (err instanceof Error && err.name === 'AbortError') {
         setModalErrorMessage(
-          'La solicitud superó el límite de espera (10 segundos). Por favor reintenta o comunícate vía WhatsApp.'
+          'La solicitud superó el límite de espera (30 segundos). Por favor reintenta o comunícate vía WhatsApp.'
         );
       } else if (err instanceof Error) {
         setModalErrorMessage(err.message || 'Error de conexión al enviar el registro.');
@@ -551,7 +665,7 @@ export const Contact: React.FC = () => {
   };
 
   const getWaPrefilledUrl = () => {
-    const waMessage = `Hola HOT COMPANY S.A.S., intento registrarme como WORKER desde la web.\n\n*Usuario:* ${formData.username.trim()}\n*Correo:* ${formData.email.trim().toLowerCase()}`;
+    const waMessage = `Hola HOT COMPANY S.A.S., intento registrarme como ${formData.role} desde la web.\n\n*Usuario:* ${formData.username.trim()}\n*Correo:* ${formData.email.trim().toLowerCase()}`;
     return `https://wa.me/${COMPANY_INFO.whatsappNumber}?text=${encodeURIComponent(waMessage)}`;
   };
 
@@ -651,7 +765,7 @@ export const Contact: React.FC = () => {
                 </h3>
 
                 <p className="text-sm text-[#A89F98] max-w-sm leading-relaxed">
-                  Por registrarte como Worker, acabas de desbloquear 10.000 Credihots
+                  Por registrarte como {registeredRole}, acabas de desbloquear 10.000 Credihots
                 </p>
 
                 {/* Badge visual para el monto en pesos (estilo balance Credihots de la app) */}
@@ -677,17 +791,14 @@ export const Contact: React.FC = () => {
                   Pronto vas a poder convertirlos y seguir ganando más dentro de la app.
                 </p>
 
-                <p className="text-xs text-[#A89F98]/70 max-w-sm leading-relaxed">
-                  Recuerda tu correo y usuario — son tu acceso. 😘
-                </p>
-
                 <Button
                   variant="secondary"
                   size="sm"
                   onClick={() => {
                     setFormState('idle');
-                    setFormData({ email: '', username: '', consent: false });
+                    setFormData({ email: '', username: '', role: 'Worker', consent: false });
                     setRegisteredUsername('');
+                    setRegisteredRole('Worker');
                     setErrors({});
                     setErrorMessage('');
                   }}
@@ -733,7 +844,7 @@ export const Contact: React.FC = () => {
                   size="sm"
                   onClick={() => {
                     setFormState('idle');
-                    setFormData({ email: '', username: '', consent: false });
+                    setFormData({ email: '', username: '', role: 'Worker', consent: false });
                   }}
                 >
                   Volver al formulario
@@ -835,7 +946,7 @@ export const Contact: React.FC = () => {
                       </div>
 
                       <p className="text-sm text-[#A89F98] leading-relaxed">
-                        Define la contraseña de acceso para tu cuenta de Worker con usuario{' '}
+                        Define la contraseña de acceso para tu cuenta de {formData.role} con usuario{' '}
                         <span className="text-[#F5F1EC] font-semibold">@{formData.username.trim()}</span>.
                         {' '}Con esta clave vas a poder entrar a la app cuando esté disponible — ya estás a un paso de ser parte de HotCompany.
                       </p>
@@ -846,7 +957,8 @@ export const Contact: React.FC = () => {
                       name="password"
                       label="Contraseña *"
                       type={showPassword ? 'text' : 'password'}
-                      placeholder="Mínimo 8 caracteres"
+                      placeholder={PASSWORD_HINT}
+                      maxLength={PASSWORD_MAX}
                       value={password}
                       error={passwordErrors.password}
                       onChange={(e) => {
@@ -874,6 +986,7 @@ export const Contact: React.FC = () => {
                       label="Confirmar contraseña *"
                       type={showConfirmPassword ? 'text' : 'password'}
                       placeholder="Repite tu contraseña"
+                      maxLength={PASSWORD_MAX}
                       value={confirmPassword}
                       error={passwordErrors.confirmPassword}
                       onChange={(e) => {
@@ -896,7 +1009,9 @@ export const Contact: React.FC = () => {
                     />
 
                     <div className="flex items-center gap-2 px-1">
-                      <span className="text-[11px] text-[#A89F98]/70">Requisito: mínimo 8 caracteres</span>
+                      <span className="text-[11px] text-[#A89F98]/70">
+                        Requisito: {PASSWORD_HINT} (máximo {PASSWORD_MAX} caracteres)
+                      </span>
                     </div>
 
                     {modalErrorMessage && (

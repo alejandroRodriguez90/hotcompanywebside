@@ -301,11 +301,11 @@ export const PRIVACY_POLICY: LegalDocument = {
 // TODO LEGAL: confirmar que info@hotcompany.app es el correo a citar en los Términos y la Política de Privacidad.
 // El borrador original decía "HOT COMPANY S.A.S" con NIT "9011882342" (sin guion).
 // TODO LEGAL: Los textos describen la aplicación (cuentas, membresías, reservas, procesadores de pago, eliminación de cuenta) mientras el sitio indica acuerdo y pago directo entre las partes: validar coherencia.
-// TODO LEGAL: El formulario de la web ahora ejecuta un registro de cuenta real tipo WORKER (/api/v1/auth/register) con correo y nombre de usuario. El equipo jurídico debe actualizar las finalidades y términos para reflejar la creación de cuenta y no solo un contacto o mensaje.
+// TODO LEGAL: El formulario de la web ahora ejecuta un registro de cuenta real (/api/auth/register) con correo, usuario, contraseña y rol (Worker/Hotel). La aceptación de términos es obligatoria en la UI, pero por ahora no se envía al backend. El equipo jurídico debe actualizar las finalidades y términos para reflejar la creación de cuenta y no solo un contacto o mensaje.
 // TODO LEGAL: La política no incluye explícitamente los datos del formulario de contacto de este sitio web (nombre, correo, teléfono, mensaje): evaluar agregar esa finalidad.
 // TODO LEGAL: Dirección pendiente de confirmar (legal vs comercial), ya marcada en COMPANY_INFO.
 
-export const TERMS_VERSION = '2026'; // TODO LEGAL: confirmar si la versión a reportar en el registro es '2026' u otro código de versión del backend.
+export const TERMS_VERSION = '2026'; // TODO LEGAL: reservado para cuando el backend defina si la aceptación de términos debe reportarse y con qué código de versión.
 
 export const TERMS_AND_CONDITIONS: LegalDocument = {
   slug: 'terminos-y-condiciones',
