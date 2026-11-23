@@ -30,6 +30,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { LegalDocument } from '../../lib/legal';
+import { useTerms } from '../../hooks/useTerms';
 import { Button } from '../ui/Button';
 
 interface LegalPageProps {
@@ -96,6 +97,8 @@ export const LegalPage: React.FC<LegalPageProps> = ({
   description,
 }) => {
   const iconMap = document.slug === 'privacidad' ? PRIVACY_ICONS : TERMS_ICONS;
+  const isTermsPage = document.slug === 'terminos-y-condiciones';
+  const { terms, loading, error, reload } = useTerms(isTermsPage);
 
   return (
     <main
@@ -127,7 +130,15 @@ export const LegalPage: React.FC<LegalPageProps> = ({
         </div>
 
         <h1 className="font-display font-black text-3xl sm:text-5xl tracking-tight leading-[1.15] mb-4">
-          {titlePrefix} <span className="text-gradient">{titleHighlight}</span>
+          {isTermsPage && loading ? (
+            <span className="text-[#A89F98]">Cargando términos vigentes…</span>
+          ) : isTermsPage && terms ? (
+            <span className="text-gradient">{terms.title}</span>
+          ) : (
+            <>
+              {titlePrefix} <span className="text-gradient">{titleHighlight}</span>
+            </>
+          )}
         </h1>
 
         <p className="font-sans text-base sm:text-lg text-[#A89F98] leading-relaxed max-w-3xl">
@@ -135,6 +146,44 @@ export const LegalPage: React.FC<LegalPageProps> = ({
         </p>
       </div>
 
+      {isTermsPage && loading && (
+        <div
+          role="status"
+          className="glass rounded-[28px] p-6 sm:p-8 border border-white/10 text-sm text-[#A89F98]"
+        >
+          Cargando términos vigentes…
+        </div>
+      )}
+
+      {isTermsPage && !loading && terms && (
+        <article className="glass rounded-[28px] p-6 sm:p-8 border border-white/10 text-[#A89F98] font-sans text-sm sm:text-[15px] leading-relaxed">
+          <p className="mb-5 font-mono text-[10px] uppercase tracking-widest text-[#FFB020]">
+            Versión {terms.version}
+          </p>
+          <div className="whitespace-pre-line">{terms.content}</div>
+        </article>
+      )}
+
+      {isTermsPage && !loading && !terms && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#FFB020]/40 bg-[#FFB020]/10 px-4 py-3 text-xs text-[#F5F1EC]"
+        >
+          <span>
+            {error || 'No pudimos cargar la versión vigente desde la API.'} Se muestra el texto
+            guardado en el sitio.
+          </span>
+          <button
+            type="button"
+            onClick={reload}
+            className="shrink-0 font-semibold text-[#FFB020] underline hover:text-[#F5F1EC]"
+          >
+            Reintentar
+          </button>
+        </div>
+      )}
+
+      {(!isTermsPage || (!loading && !terms)) && (
       <div className="flex flex-col gap-8 text-[#A89F98] font-sans text-sm sm:text-[15px] leading-relaxed">
         {document.sections.map((section) => {
           const Icon = iconMap[section.number] || FileText;
@@ -214,6 +263,7 @@ export const LegalPage: React.FC<LegalPageProps> = ({
           );
         })}
       </div>
+      )}
 
       {/* Action Button */}
       <div className="flex justify-center pt-8">

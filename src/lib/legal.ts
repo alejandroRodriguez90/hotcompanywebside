@@ -305,7 +305,8 @@ export const PRIVACY_POLICY: LegalDocument = {
 // TODO LEGAL: La política no incluye explícitamente los datos del formulario de contacto de este sitio web (nombre, correo, teléfono, mensaje): evaluar agregar esa finalidad.
 // TODO LEGAL: Dirección pendiente de confirmar (legal vs comercial), ya marcada en COMPANY_INFO.
 
-export const TERMS_VERSION = '2026'; // TODO LEGAL: reservado para cuando el backend defina si la aceptación de términos debe reportarse y con qué código de versión.
+// La versión aceptada en el registro ya no es estática: se obtiene de
+// GET /api/v1/terms (ver src/hooks/useTerms.ts y src/lib/api.ts).
 
 export const TERMS_AND_CONDITIONS: LegalDocument = {
   slug: 'terminos-y-condiciones',

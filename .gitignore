@@ -22,6 +22,7 @@ dist-ssr
 # Raw unoptimized assets
 assets-source/
 hotcompany-dist.zip
+hotcompanywebside-dist.zip
 
 # Editor directories and files
 .vscode/*

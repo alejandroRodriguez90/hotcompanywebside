@@ -25,6 +25,15 @@ export default defineConfig({
       },
     },
   ],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://api.hotcompany.app',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
   esbuild: {
     drop: ['console', 'debugger'],
   },
