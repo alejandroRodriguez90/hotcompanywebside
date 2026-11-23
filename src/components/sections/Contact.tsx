@@ -282,6 +282,7 @@ const Step1Form: React.FC<Step1FormProps> = ({
   return (
     <motion.form
       key="step-1"
+      id="contacto-form"
       initial={reducedMotion ? { opacity: 1 } : { opacity: 0, x: -16 }}
       animate={{ opacity: 1, x: 0 }}
       exit={reducedMotion ? { opacity: 1 } : { opacity: 0, x: 16 }}
@@ -899,11 +900,12 @@ export const Contact: React.FC = () => {
           </motion.div>
 
           <motion.h2
+            tabIndex={-1}
             initial={reducedMotion ? { opacity: 1 } : { opacity: 0, y: 18 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="font-display font-extrabold text-[#F5F1EC] tracking-tight mb-3"
+            className="font-display font-extrabold text-[#F5F1EC] tracking-tight mb-3 focus:outline-none"
             style={{ fontSize: 'clamp(2rem, 4vw + 0.5rem, 3.2rem)' }}
           >
             {CONTACT_CONTENT.title}

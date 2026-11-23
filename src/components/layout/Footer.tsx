@@ -3,11 +3,10 @@ import { Link } from 'react-router-dom';
 import { ArrowUp, Mail, Phone, MapPin, ShieldCheck } from 'lucide-react';
 import { COMPANY_INFO, FOOTER_LINKS } from '../../lib/constants';
 import { Button } from '../ui/Button';
+import { scrollToTop } from '../../lib/scroll';
 
 export const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
-
-  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
   return (
     <footer className="relative border-t border-white/[0.08] pt-12 pb-10 overflow-hidden">
@@ -119,7 +118,7 @@ export const Footer: React.FC = () => {
         <div className="pt-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-[#A89F98]/70">
           <span>© {currentYear} {COMPANY_INFO.name} · Todos los derechos reservados · <a href="/desarrollo/" aria-label="Ir a la landing de diseño y desarrollo" className="hover:text-[#FFB020] transition-colors">Diseño y Desarrollo</a></span>
           <Button
-            onClick={scrollToTop}
+            onClick={() => scrollToTop()}
             aria-label="Volver arriba"
             variant="secondary"
             size="sm"

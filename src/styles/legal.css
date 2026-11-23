@@ -1,0 +1,141 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LEGAL READING VIEW — /terminos
+   Solo presentación. La lógica, el contenido y GET /api/v1/terms siguen en
+   LegalPage.tsx / useTerms.ts / legal.ts. El alcance se limita al
+   <main id="terminos-y-condiciones"> para no afectar /privacidad.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+main#terminos-y-condiciones {
+  --legal-measure: 68ch;
+}
+
+/* Texto vigente servido por la API (article con whitespace-pre-line). */
+main#terminos-y-condiciones article {
+  width: 100%;
+  max-width: var(--legal-measure);
+  margin-inline: auto;
+  color: #c4bcb5;
+  font-size: clamp(0.9rem, 0.86rem + 0.2vw, 1rem);
+  line-height: 1.75;
+  letter-spacing: 0.002em;
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+
+/* Secciones estáticas: fallback cuando la API no responde. */
+main#terminos-y-condiciones section[id^='seccion-'] {
+  width: 100%;
+  max-width: 72ch;
+  margin-inline: auto;
+  color: #c4bcb5;
+  font-size: clamp(0.9rem, 0.86rem + 0.2vw, 1rem);
+  line-height: 1.75;
+}
+
+main#terminos-y-condiciones section[id^='seccion-'] p {
+  margin-block: 0 1rem;
+  text-wrap: pretty;
+}
+
+main#terminos-y-condiciones section[id^='seccion-'] p:last-child {
+  margin-bottom: 0;
+}
+
+main#terminos-y-condiciones section[id^='seccion-'] li {
+  color: #c4bcb5;
+}
+
+main#terminos-y-condiciones h2 {
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+main#terminos-y-condiciones strong {
+  color: #f5f1ec;
+  font-weight: 600;
+}
+
+main#terminos-y-condiciones a {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+main#terminos-y-condiciones [class*='font-mono'] {
+  overflow-wrap: anywhere;
+}
+
+/* Disclosures: estilos defensivos si el contenido legal los utiliza. */
+main#terminos-y-condiciones details {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg, 24px);
+  background: rgba(20, 16, 18, 0.55);
+  padding: 0.25rem 1rem;
+}
+
+main#terminos-y-condiciones summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 44px;
+  cursor: pointer;
+  list-style: none;
+  color: #f5f1ec;
+  font-family: var(--font-display, sans-serif);
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm, 12px);
+  transition: color 200ms ease, background-color 200ms ease;
+}
+
+main#terminos-y-condiciones summary::-webkit-details-marker {
+  display: none;
+}
+
+main#terminos-y-condiciones summary::after {
+  content: '⌄';
+  flex: none;
+  color: #ff6a13;
+  font-size: 1.1rem;
+  line-height: 1;
+  transition: transform 220ms ease;
+}
+
+main#terminos-y-condiciones details[open] summary::after {
+  transform: rotate(180deg);
+}
+
+main#terminos-y-condiciones summary:hover,
+main#terminos-y-condiciones summary:focus-visible {
+  color: #ffb020;
+  background: rgba(255, 106, 19, 0.06);
+  outline: none;
+}
+
+main#terminos-y-condiciones summary:focus-visible {
+  box-shadow: 0 0 0 2px rgba(255, 106, 19, 0.65);
+}
+
+main#terminos-y-condiciones details[open] > :not(summary) {
+  animation: legalDisclosureReveal 220ms ease-out both;
+}
+
+@keyframes legalDisclosureReveal {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 640px) {
+  main#terminos-y-condiciones article,
+  main#terminos-y-condiciones section[id^='seccion-'] {
+    font-size: 0.9rem;
+    line-height: 1.7;
+  }
+
+  main#terminos-y-condiciones details {
+    padding-inline: 0.75rem;
+  }
+}

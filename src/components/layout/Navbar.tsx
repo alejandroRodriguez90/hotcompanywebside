@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Menu, X } from 'lucide-react';
 import { NAV_LINKS } from '../../lib/constants';
 import { useScrollDirection } from '../../hooks/useScrollDirection';
+import { scrollToAnchoredElement } from '../../lib/scroll';
 
 export const Navbar: React.FC = () => {
   const { scrollDirection, isAtTop } = useScrollDirection(12);
@@ -12,14 +13,18 @@ export const Navbar: React.FC = () => {
 
   const handleLinkClick = (href: string) => {
     setMobileMenuOpen(false);
+    // Desde otra ruta se recarga '/#ancla': así el scroll inicial de App también aplica.
     if (window.location.pathname !== '/') {
       window.location.href = `/${href}`;
       return;
     }
-    setTimeout(() => {
-      const target = document.querySelector(href);
-      if (target) target.scrollIntoView({ behavior: 'smooth' });
-    }, mobileMenuOpen ? 300 : 0);
+    const scroll = () => scrollToAnchoredElement(href, { offset: -84 });
+    if (mobileMenuOpen) {
+      setTimeout(scroll, 300);
+    } else {
+      scroll();
+    }
+    window.history.replaceState(null, '', href);
   };
 
   const navbarBase = isAtTop

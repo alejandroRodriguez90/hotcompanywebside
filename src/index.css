@@ -3,6 +3,7 @@
 @import "@fontsource-variable/dm-sans";
 @import "@fontsource-variable/jetbrains-mono";
 @import "./styles/tokens.css";
+@import "./styles/legal.css";
 
 @theme {
   --color-bg: #0A0A0B;
