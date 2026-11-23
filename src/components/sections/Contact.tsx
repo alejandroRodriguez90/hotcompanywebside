@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Mail,
@@ -169,32 +169,13 @@ const Step1Form: React.FC<Step1FormProps> = ({
 }) => {
   const [formData, setFormData] = useState<RegisterFormData>(initialData);
   const [honeypot, setHoneypot] = useState('');
-  const [showHotelNotice, setShowHotelNotice] = useState(false);
-  // Nonce para que clics consecutivos en Hotel reinicien el resalte temporal.
-  const [hotelHighlightNonce, setHotelHighlightNonce] = useState(0);
-  const hotelHighlighted = hotelHighlightNonce > 0;
   const [errors, setErrors] = useState<Partial<Record<keyof RegisterFormData, string>>>(
     initialErrors || {}
   );
 
-  // El aviso es informativo: se retira solo para no dejar ruido visual.
-  useEffect(() => {
-    if (!showHotelNotice) return;
-    const timeoutId = setTimeout(() => setShowHotelNotice(false), 6000);
-    return () => clearTimeout(timeoutId);
-  }, [showHotelNotice]);
-
-  // El resalte naranja de Hotel dura un instante y regresa a Worker.
-  useEffect(() => {
-    if (!hotelHighlighted) return;
-    const timeoutId = setTimeout(() => setHotelHighlightNonce(0), 600);
-    return () => clearTimeout(timeoutId);
-  }, [hotelHighlighted]);
-
   const handleFieldChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     if (name !== 'email' && name !== 'username') return;
-    setShowHotelNotice((prev) => (prev ? false : prev));
     setFormData((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => {
       if (prev[name]) {
@@ -207,12 +188,7 @@ const Step1Form: React.FC<Step1FormProps> = ({
   const handleRoleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const role = e.target.value as UserRole;
     if (role !== 'Worker' && role !== 'Hotel') return;
-    // El registro web solo admite Workers: Hotel sigue siendo clicable y
-    // visible, pero nunca se convierte en el rol activo del formulario.
-    const activeRole: UserRole = role === 'Hotel' ? 'Worker' : role;
-    setFormData((prev) => ({ ...prev, role: activeRole }));
-    setShowHotelNotice(role === 'Hotel');
-    setHotelHighlightNonce((prev) => (role === 'Hotel' ? prev + 1 : 0));
+    setFormData((prev) => ({ ...prev, role }));
     setErrors((prev) => {
       if (prev.role) {
         return { ...prev, role: undefined };
@@ -368,29 +344,45 @@ const Step1Form: React.FC<Step1FormProps> = ({
             { value: 'Hotel', title: 'Hotel' },
           ] as const).map((option) => {
             const selected = formData.role === option.value;
-            // Durante el pulso, el borde naranja "viaja" a Hotel y vuelve a
-            // Worker al vencer el temporizador (el rol real nunca cambia).
-            const highlighted = hotelHighlighted ? option.value === 'Hotel' : selected;
+            const isWorker = option.value === 'Worker';
+
+            const activeStyle = isWorker
+              ? {
+                  borderColor: '#9B2C3E',
+                  backgroundColor: 'rgba(155, 44, 62, 0.12)',
+                  boxShadow:
+                    '0 0 0 1px rgba(155, 44, 62, 0.45), 0 8px 24px -14px rgba(155, 44, 62, 0.65), inset 0 1px 0 rgba(225, 6, 0, 0.25)',
+                }
+              : {
+                  borderColor: '#3B6EA5',
+                  backgroundColor: 'rgba(59, 110, 165, 0.12)',
+                  boxShadow:
+                    '0 0 0 1px rgba(59, 110, 165, 0.45), 0 8px 24px -14px rgba(59, 110, 165, 0.65), inset 0 1px 0 rgba(80, 150, 220, 0.25)',
+                };
+
+            const focusRingClass = isWorker
+              ? 'focus-within:ring-[#9B2C3E]/50'
+              : 'focus-within:ring-[#3B6EA5]/50';
+
+            const hoverTextClass = isWorker
+              ? 'group-hover:text-[#F0A8B4]'
+              : 'group-hover:text-[#9BC3F0]';
+
+            const badgeActiveClasses = isWorker
+              ? 'border-[#9B2C3E]/40 bg-[#9B2C3E]/15 text-[#F0A8B4]'
+              : 'border-[#3B6EA5]/40 bg-[#3B6EA5]/15 text-[#9BC3F0]';
+
             return (
               <label
                 key={option.value}
-                className={`group relative flex min-h-[54px] cursor-pointer items-center justify-between gap-2 rounded-2xl glass border px-4 py-3 transition-all duration-300 ease-out focus-within:ring-2 focus-within:ring-[#FF6A13]/50 ${
-                  highlighted
-                    ? 'border-[#FF6A13] bg-[#FF6A13]/10 shadow-[0_0_0_1px_rgba(255,106,19,0.45),0_8px_24px_-14px_rgba(255,106,19,0.65)] hover:border-[#FF6A13]'
+                className={`group relative flex min-h-[54px] cursor-pointer items-center justify-between gap-2 rounded-2xl glass border px-4 py-3 transition-all duration-300 ease-out focus-within:ring-2 ${focusRingClass} ${
+                  selected
+                    ? isWorker
+                      ? 'border-[#9B2C3E] bg-[#9B2C3E]/10 shadow-[0_0_0_1px_rgba(155,44,62,0.45),0_8px_24px_-14px_rgba(155,44,62,0.65)] hover:border-[#9B2C3E]'
+                      : 'border-[#3B6EA5] bg-[#3B6EA5]/10 shadow-[0_0_0_1px_rgba(59,110,165,0.45),0_8px_24px_-14px_rgba(59,110,165,0.65)] hover:border-[#3B6EA5]'
                     : 'border-white/10 hover:border-white/22 hover:bg-white/[0.03]'
                 }`}
-                style={
-                  highlighted
-                    ? {
-                        // .glass defines border/background/shadow outside Tailwind's
-                        // layers, so inline styles guarantee the active orange edge.
-                        borderColor: '#FF6A13',
-                        backgroundColor: 'rgba(255, 106, 19, 0.12)',
-                        boxShadow:
-                          '0 0 0 1px rgba(255,106,19,0.45), 0 8px 24px -14px rgba(255,106,19,0.65), inset 0 1px 0 rgba(255,176,32,0.25)',
-                      }
-                    : { borderColor: 'rgba(255,255,255,0.10)' }
-                }
+                style={selected ? activeStyle : { borderColor: 'rgba(255,255,255,0.10)' }}
               >
                 <input
                   type="radio"
@@ -402,20 +394,24 @@ const Step1Form: React.FC<Step1FormProps> = ({
                   aria-invalid={Boolean(errors.role)}
                   aria-describedby={`role-status${errors.role ? ' role-error' : ''}`}
                 />
-                <span className="font-display text-sm font-semibold text-[#F5F1EC] transition-colors group-hover:text-[#FFB020]">
+                <span
+                  className={`font-display text-sm font-semibold text-[#F5F1EC] transition-colors ${
+                    selected ? hoverTextClass : 'group-hover:text-white'
+                  }`}
+                >
                   {option.title}
                 </span>
                 <span
                   className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-[3px] font-mono text-[9px] font-medium uppercase tracking-wide ${
-                    option.value === 'Worker'
-                      ? 'border-[#FF6A13]/30 bg-[#FF6A13]/10 text-[#FFB020]'
+                    selected
+                      ? badgeActiveClasses
                       : 'border-white/12 bg-white/[0.04] text-[#A89F98]'
                   }`}
                 >
-                  {option.value === 'Worker' && (
+                  {selected && (
                     <Check className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
                   )}
-                  {option.value === 'Worker' ? 'ACTIVO' : 'INACTIVO'}
+                  ACTIVO
                 </span>
               </label>
             );
@@ -426,34 +422,30 @@ const Step1Form: React.FC<Step1FormProps> = ({
           role="status"
           aria-live="polite"
           className={`mt-2.5 flex items-center gap-2 rounded-xl border px-3 py-2 transition-all duration-300 ease-out ${
-            showHotelNotice
-              ? 'border-[#FFB020]/35 bg-[#FFB020]/[0.08]'
-              : 'border-[#FF6A13]/15 bg-[#FF6A13]/[0.04]'
+            formData.role === 'Worker'
+              ? 'border-[#9B2C3E]/30 bg-[#9B2C3E]/[0.08]'
+              : 'border-[#3B6EA5]/30 bg-[#3B6EA5]/[0.08]'
           }`}
         >
-          {showHotelNotice ? (
-            <AlertCircle
-              className="h-3.5 w-3.5 shrink-0 text-[#FFB020]"
-              strokeWidth={1.5}
-              aria-hidden="true"
-            />
-          ) : (
+          <span
+            className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+              formData.role === 'Worker'
+                ? 'bg-[#C43D52] shadow-[0_0_8px_rgba(196,61,82,0.65)]'
+                : 'bg-[#4A88C7] shadow-[0_0_8px_rgba(74,136,199,0.65)]'
+            }`}
+            aria-hidden="true"
+          />
+          <p className="text-[11px] leading-relaxed text-[#A89F98]">
+            Rol activo:{' '}
             <span
-              className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#FFB020] shadow-[0_0_8px_rgba(255,176,32,0.6)]"
-              aria-hidden="true"
-            />
-          )}
-          {showHotelNotice ? (
-            <p className="text-[11px] leading-relaxed text-[#F5D6B3]">
-              Rol inactivo: Hotel · por ahora el registro web es solo para Workers, te dejamos en
-              Worker para continuar
-            </p>
-          ) : (
-            <p className="text-[11px] leading-relaxed text-[#A89F98]">
-              Rol activo: <span className="font-semibold text-[#FFB020]">{formData.role}</span>
-              <span className="text-[#A89F98]/70"> · verifica antes de continuar</span>
-            </p>
-          )}
+              className={`font-semibold ${
+                formData.role === 'Worker' ? 'text-[#F0A8B4]' : 'text-[#9BC3F0]'
+              }`}
+            >
+              {formData.role}
+            </span>
+            <span className="text-[#A89F98]/70"> · verifica antes de continuar</span>
+          </p>
         </div>
         {errors.role && (
           <p id="role-error" role="alert" className="mt-1.5 flex items-center gap-1 text-xs text-[#E10600]">
@@ -656,10 +648,11 @@ export const Contact: React.FC = () => {
     setModalErrorMessage('');
 
     // El termsVersion viene de GET /api/v1/terms, nunca del valor estático.
-    // El registro web está habilitado solo para Workers (el botón Hotel nunca
-    // cambia el rol activo), por lo que el payload siempre es WORKER.
+    // Mapeo dinámico según el rol seleccionado: Worker -> WORKER, Hotel -> HOTEL.
+    const userType: 'WORKER' | 'HOTEL' = formData.role === 'Hotel' ? 'HOTEL' : 'WORKER';
+
     const payload: RegisterPayload = {
-      userType: 'WORKER',
+      userType,
       email: formData.email.trim().toLowerCase(),
       // TODO: confirmar con backend si username debe ser case-sensitive o
       // normalizado — por ahora se envía en minúsculas por seguridad.
