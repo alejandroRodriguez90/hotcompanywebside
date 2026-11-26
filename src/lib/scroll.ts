@@ -7,13 +7,6 @@ export const setActiveLenis = (instance: Lenis | null): void => {
   activeLenis = instance;
 };
 
-/**
- * Encuadre del aterrizaje inicial en #contacto. Positivo = la cámara baja un
- * poco más respecto al borde de la sección, para que "Crea tu cuenta" muestre
- * completo el botón "Registrarme ->" y el pie de la tarjeta con margen inferior.
- */
-export const CONTACT_LANDING_OFFSET = 60;
-
 interface ScrollOptions {
   immediate?: boolean;
   offset?: number;
