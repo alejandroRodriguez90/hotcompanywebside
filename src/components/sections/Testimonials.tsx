@@ -11,6 +11,7 @@ export const Testimonials: React.FC = () => {
   const [current, setCurrent] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [imgErrors, setImgErrors] = useState<Set<string>>(new Set());
   const [viewportMode, setViewportMode] = useState<'mobile' | 'tablet' | 'desktop'>(() => {
     if (typeof window === 'undefined') return 'desktop';
     if (window.innerWidth < 640) return 'mobile';
@@ -72,25 +73,25 @@ export const Testimonials: React.FC = () => {
   return (
     <section
       id="testimonios"
-      className="relative pt-56 pb-56 sm:pt-[270px] sm:pb-[270px] overflow-hidden bg-[#FFFFFF]"
+      className="relative pt-28 pb-28 sm:pt-36 sm:pb-36 overflow-hidden bg-[#FFFFFF]"
     >
-      {/* Transición superior: #0A0A0B (HowItWorks) -> #FFFFFF */}
+      {/* Transición superior: #0A0A0B (HowItWorks) -> #FFFFFF — 10 stops para suavizar banding */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute top-0 inset-x-0 h-[180px] sm:h-[220px]"
+        className="pointer-events-none absolute top-0 inset-x-0 h-[140px] sm:h-[170px]"
         style={{
           background:
-            'linear-gradient(180deg, rgba(10,10,11,1) 0%, rgba(10,10,11,0.8) 25%, rgba(10,10,11,0.45) 55%, rgba(10,10,11,0.15) 80%, rgba(10,10,11,0) 100%)',
+            'linear-gradient(180deg, rgba(10,10,11,1) 0%, rgba(10,10,11,0.93) 10%, rgba(10,10,11,0.84) 20%, rgba(10,10,11,0.72) 30%, rgba(10,10,11,0.59) 42%, rgba(10,10,11,0.44) 54%, rgba(10,10,11,0.30) 65%, rgba(10,10,11,0.17) 76%, rgba(10,10,11,0.07) 87%, rgba(10,10,11,0) 100%)',
         }}
       />
 
-      {/* Transición inferior: #FFFFFF -> #0A0A0B (Contact) */}
+      {/* Transición inferior: #FFFFFF -> #0A0A0B (Contact) — 10 stops para suavizar banding */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute bottom-0 inset-x-0 h-[180px] sm:h-[220px]"
+        className="pointer-events-none absolute bottom-0 inset-x-0 h-[140px] sm:h-[170px]"
         style={{
           background:
-            'linear-gradient(180deg, rgba(10,10,11,0) 0%, rgba(10,10,11,0.15) 20%, rgba(10,10,11,0.45) 45%, rgba(10,10,11,0.8) 75%, rgba(10,10,11,1) 100%)',
+            'linear-gradient(180deg, rgba(10,10,11,0) 0%, rgba(10,10,11,0.07) 13%, rgba(10,10,11,0.17) 24%, rgba(10,10,11,0.30) 35%, rgba(10,10,11,0.44) 46%, rgba(10,10,11,0.59) 58%, rgba(10,10,11,0.72) 70%, rgba(10,10,11,0.84) 80%, rgba(10,10,11,0.93) 90%, rgba(10,10,11,1) 100%)',
         }}
       />
 
@@ -217,7 +218,7 @@ export const Testimonials: React.FC = () => {
                           : '0 18px 40px -14px rgba(10,10,11,0.30), 0 8px 16px -6px rgba(10,10,11,0.18)',
                       }}
                     >
-                      {/* z-index 0: Anillo exterior oscuro con bisel superior sutil */}
+                      {/* z-index 0: Anillo exterior — técnica exacta store button */}
                       <span
                         aria-hidden="true"
                         style={{
@@ -225,7 +226,7 @@ export const Testimonials: React.FC = () => {
                           inset: 0,
                           borderRadius: '32px',
                           background:
-                            'linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(10,10,11,0.22) 15%, rgba(10,10,11,0.22) 100%)',
+                            'linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.12) 55%, rgba(255,255,255,0.18) 100%)',
                           zIndex: 0,
                         }}
                       />
@@ -241,7 +242,7 @@ export const Testimonials: React.FC = () => {
                           zIndex: 1,
                         }}
                       />
-                      {/* z-index 2: Highlight glossy superior concentrado (70px) */}
+                      {/* z-index 2: Highlight glossy superior — técnica exacta store button (28px fijo) */}
                       <span
                         aria-hidden="true"
                         style={{
@@ -249,10 +250,10 @@ export const Testimonials: React.FC = () => {
                           top: '1px',
                           left: '1px',
                           right: '1px',
-                          height: '70px',
+                          height: '28px',
                           borderRadius: '31px 31px 40% 40%',
                           background:
-                            'linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.10) 50%, transparent 100%)',
+                            'linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.06) 45%, transparent 100%)',
                           pointerEvents: 'none',
                           zIndex: 2,
                         }}
@@ -271,7 +272,8 @@ export const Testimonials: React.FC = () => {
                             {isHotel ? 'Hotel Aliado' : 'Worker'}
                           </span>
                           <Quote
-                            className="w-6 h-6 text-white/20 shrink-0"
+                            className="w-6 h-6 shrink-0"
+                            style={{ color: 'rgba(255,106,19,0.70)' }}
                             strokeWidth={1.5}
                             aria-hidden="true"
                           />
@@ -284,13 +286,24 @@ export const Testimonials: React.FC = () => {
 
                       <div className="relative z-[3] flex items-center gap-4 pt-4 border-t border-white/[0.08]">
                         <div
-                          className="w-[70px] h-[70px] sm:w-20 sm:h-20 rounded-full flex items-center justify-center shrink-0 shadow-[0_6px_18px_rgba(255,106,19,0.35)] border border-white/20"
-                          style={{ background: 'var(--gradient-brand)' }}
+                          className="w-[70px] h-[70px] sm:w-20 sm:h-20 rounded-full flex items-center justify-center shrink-0 shadow-[0_6px_18px_rgba(255,106,19,0.35)] border border-white/20 overflow-hidden"
+                          style={{ background: imgErrors.has(item.initials) ? 'var(--gradient-brand)' : undefined }}
                           aria-hidden="true"
                         >
-                          <span className="font-display text-base sm:text-lg font-bold text-[#F5F1EC] tracking-wide">
-                            {item.initials}
-                          </span>
+                          {imgErrors.has(item.initials) ? (
+                            <span className="font-display text-base sm:text-lg font-bold text-[#F5F1EC] tracking-wide">
+                              {item.initials}
+                            </span>
+                          ) : (
+                            <img
+                              src={`/testimonials/${item.initials}.webp`}
+                              alt={item.name}
+                              className="w-full h-full object-cover rounded-full"
+                              onError={() =>
+                                setImgErrors((prev) => new Set(prev).add(item.initials))
+                              }
+                            />
+                          )}
                         </div>
                         <div className="min-w-0">
                           <p className="font-display font-semibold text-base sm:text-lg text-[#F5F1EC] truncate">

@@ -18,6 +18,18 @@ const ICON_MAP: Record<string, LucideIcon> = {
 
 const MARQUEE_TEXT_GRADIENT = 'linear-gradient(90deg, #F5F1EC 0%, #A89F98 100%)';
 
+/** Un gradiente cálido distinto por cada uno de los 6 mensajes del marquee.
+ *  El orden coincide con MARQUEE_ITEMS; el loop duplicado usa i % 6
+ *  para mantener el mismo color en cada repetición. */
+const BADGE_COLORS: readonly string[] = [
+  'linear-gradient(180deg, #FF4D4D 0%, #B91C1C 100%)',   // 1 Rojo
+  'linear-gradient(180deg, #FF8A3D 0%, #C2410C 100%)',   // 2 Naranja
+  'linear-gradient(180deg, #FFC24D 0%, #B45309 100%)',   // 3 Ámbar
+  'linear-gradient(180deg, #FF6B9D 0%, #BE185D 100%)',   // 4 Rosa
+  'linear-gradient(180deg, #FF7A6B 0%, #A3391A 100%)',   // 5 Coral-salmón (diferenciado del naranja #2)
+  'linear-gradient(180deg, #D94D6B 0%, #7F1D3D 100%)',   // 6 Vino
+] as const;
+
 /**
  * Marquee — franja plana, CSS translateX loop, 15 s/vuelta.
  * Pausa en hover (CSS animation-play-state) y fuera del viewport (IntersectionObserver → clase).
@@ -115,6 +127,7 @@ export const Marquee: React.FC = () => {
         >
           {items.map((item, i) => {
             const Icon = ICON_MAP[item.icon];
+            const badgeGradient = BADGE_COLORS[i % BADGE_COLORS.length];
             return (
               <React.Fragment key={`${item.label}-${i}`}>
                 {/* Item */}
@@ -124,7 +137,7 @@ export const Marquee: React.FC = () => {
                       aria-hidden="true"
                       className="relative flex-shrink-0 w-[26px] h-[26px] rounded-full overflow-hidden flex items-center justify-center"
                       style={{
-                        background: 'linear-gradient(180deg, #FF4D4D 0%, #E10600 52%, #991B1B 100%)',
+                        background: badgeGradient,
                         border: '1px solid rgba(255,255,255,0.28)',
                         boxShadow: '0 2px 8px rgba(220,38,38,0.42), inset 0 -2px 3px rgba(0,0,0,0.35)',
                       }}

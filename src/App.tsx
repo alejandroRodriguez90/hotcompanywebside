@@ -6,6 +6,8 @@ import { Footer } from './components/layout/Footer';
 import { Background } from './components/layout/Background';
 import { CustomCursor } from './components/layout/CustomCursor';
 import { Loader } from './components/layout/Loader';
+import { IncentiveModal } from './components/ui/IncentiveModal';
+import { StickyConversionBar } from './components/ui/StickyConversionBar';
 import { Home } from './pages/Home';
 import { NotFound } from './pages/NotFound';
 import { useReducedMotion } from './hooks/useReducedMotion';
@@ -17,9 +19,43 @@ const Register = lazy(() => import('./pages/Register'));
 
 const HERO_ANCHOR = '#inicio';
 
+// Garantiza que el modal de incentivo se muestre una sola vez por carga de página (se resetea en F5).
+let hasShownIncentive = false;
+
 function AppShell({ loaderComplete }: { loaderComplete: boolean }) {
   const { pathname } = useLocation();
   const isRegisterRoute = pathname === '/registro';
+  const [showIncentiveModal, setShowIncentiveModal] = useState(false);
+
+  useEffect(() => {
+    if (!loaderComplete || isRegisterRoute || hasShownIncentive) return;
+
+    let ticking = false;
+
+    const checkScrollProgress = () => {
+      ticking = false;
+      if (hasShownIncentive) return;
+
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      if (maxScroll <= 0) return;
+
+      if (window.scrollY / maxScroll >= 0.3) {
+        hasShownIncentive = true;
+        setShowIncentiveModal(true);
+        window.removeEventListener('scroll', onScroll);
+      }
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(checkScrollProgress);
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [loaderComplete, isRegisterRoute]);
 
   return (
     <div className="flex flex-col min-h-screen text-[#F5F1EC]">
@@ -91,6 +127,23 @@ function AppShell({ loaderComplete }: { loaderComplete: boolean }) {
 
       {/* Pie de Página Corporativo */}
       {!isRegisterRoute && <Footer />}
+
+      {/* Modal de incentivo Credihots (30% de scroll, excluido en /registro) */}
+      <IncentiveModal
+        isOpen={showIncentiveModal && !isRegisterRoute}
+        onClose={() => {
+          hasShownIncentive = true;
+          setShowIncentiveModal(false);
+        }}
+      />
+
+      {/* Sticky bar de notificaciones tipo chat (excluida en /registro, pausada con modal) */}
+      {!isRegisterRoute && (
+        <StickyConversionBar
+          enabled={loaderComplete && !isRegisterRoute}
+          suppressed={showIncentiveModal}
+        />
+      )}
     </div>
   );
 }

@@ -879,8 +879,36 @@ export const RegisterForm: React.FC = () => {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="glass rounded-[32px] p-6 sm:p-8 min-h-[530px] sm:min-h-[550px] flex flex-col justify-start"
+      className="relative overflow-hidden rounded-[32px] p-6 sm:p-8 min-h-[530px] sm:min-h-[550px] flex flex-col justify-start"
+      style={{ boxShadow: '0 0 24px rgba(255,106,19,0.10)' }}
     >
+      {/* z-index 0: Anillo exterior con tinte naranja sutil y delicado */}
+      <span
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: '32px',
+          background:
+            'linear-gradient(180deg, rgba(255,106,19,0.22) 0%, rgba(255,106,19,0.08) 50%, rgba(255,106,19,0.14) 100%)',
+          zIndex: 0,
+        }}
+      />
+      {/* z-index 1: Relleno interior negro limpio uniforme */}
+      <span
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          inset: '1px',
+          borderRadius: '31px',
+          background:
+            'linear-gradient(180deg, rgba(10,10,11,0.96) 0%, rgba(6,6,8,0.98) 100%)',
+          zIndex: 1,
+        }}
+      />
+
+      {/* z-index 3: Contenido completo del formulario (todos los estados) */}
+      <div className="relative z-[3] flex flex-col flex-1">
       {/* 429: aviso general, no asociado a ningún campo */}
       {rateLimitMessage && (
         <div
@@ -1218,6 +1246,7 @@ export const RegisterForm: React.FC = () => {
           </AnimatePresence>
         </div>
       )}
+      </div>
     </motion.div>
   );
 };
