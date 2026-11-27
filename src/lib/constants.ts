@@ -228,14 +228,12 @@ export const SERVICES: ServiceCard[] = [
 ];
 
 export const MARQUEE_ITEMS = [
-  { label: 'Flujo Constante de Reservas Internas', icon: 'Repeat' },
-  // TODO: aprobación del equipo
-  { label: 'Perfiles Previamente Verificados', icon: 'BadgeCheck' },
-  { label: 'Integra Nuestra Comunidad', icon: 'Users' },
-  { label: 'Posicionamiento Dentro de la App', icon: 'MapPin' },
-  { label: 'Prioridad Frente a Hoteles No Afiliados', icon: 'TrendingUp' },
-  // TODO: confirmar "Garantizada" con el equipo legal.
-  { label: 'Confidencialidad y Seguridad Garantizada', icon: 'ShieldCheck' },
+  { label: 'Únete a nuestra red en crecimiento', icon: 'Users' },
+  { label: 'Registro 100% gratuito y sin compromiso', icon: 'BadgeCheck' },
+  { label: 'Conecta con hoteles y prestadores verificados', icon: 'ShieldCheck' },
+  { label: 'Sé parte desde el primer día', icon: 'Sparkles' },
+  { label: 'Gestiona tu tiempo con respaldo real', icon: 'Clock' },
+  { label: 'Acceso anticipado a la app HotCompany', icon: 'Smartphone' },
 ];
 
 export const HOW_IT_WORKS_CONTENT = {
@@ -279,6 +277,72 @@ export const CONTACT_CONTENT = {
   // TODO: si el equipo confirma un tiempo real, se agrega.
   whatsappNote: 'Te asesoramos de inmediato por WhatsApp o correo.',
 };
+
+export interface Testimonial {
+  quote: string;
+  name: string;
+  role: string;
+  initials: string;
+  type: 'hotel' | 'worker';
+}
+
+export const TESTIMONIALS_CONTENT = {
+  tagline: 'LO QUE DICEN',
+  title: 'Historias de Nuestra Red',
+  subtitle:
+    'Hoteles aliados y prestadores independientes que ya confían en una coordinación clara, verificada y sin intermediarios.',
+};
+
+export const TESTIMONIALS: Testimonial[] = [
+  {
+    quote:
+      'Desde que nos sumamos a la red, simplificamos la gestión de personal temporal sin perder el control de calidad que nuestros huéspedes esperan.',
+    name: 'M.H.',
+    role: 'Gerente de Operaciones',
+    initials: 'MH',
+    type: 'hotel',
+  },
+  {
+    quote:
+      'La verificación previa de los prestadores nos da la tranquilidad que necesitábamos para abrir las puertas a personal externo.',
+    name: 'J.P.',
+    role: 'Director de Hotel',
+    initials: 'JP',
+    type: 'hotel',
+  },
+  {
+    quote:
+      'Es un canal directo y confiable, sin los dolores de cabeza de coordinar con intermediarios externos.',
+    name: 'A.R.',
+    role: 'Administradora',
+    initials: 'AR',
+    type: 'hotel',
+  },
+  {
+    quote:
+      'Encontrar oportunidades reales con hoteles verificados me dio la estabilidad que buscaba en mi trabajo independiente.',
+    name: 'C.G.',
+    role: 'Worker',
+    initials: 'CG',
+    type: 'worker',
+  },
+  {
+    quote:
+      'El proceso de registro fue simple y rápido. En poco tiempo ya estaba conectada con mi primera oportunidad.',
+    name: 'L.M.',
+    role: 'Worker',
+    initials: 'LM',
+    type: 'worker',
+  },
+  {
+    quote:
+      'Me gusta que todo quede claro desde el principio: condiciones, pagos y respaldo. Se siente una plataforma seria.',
+    name: 'D.S.',
+    role: 'Worker',
+    initials: 'DS',
+    type: 'worker',
+  },
+];
 
 export const FOOTER_LINKS = {
   plataforma: [

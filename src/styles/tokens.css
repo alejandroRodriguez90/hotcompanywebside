@@ -249,3 +249,79 @@
     radial-gradient(circle at 4px 4px, rgba(255, 106, 19, 0.9) 1px, transparent 1.1px);
   background-size: 6px 6px;
 }
+
+/* ── NAVBAR CTA LIQUID SHEEN ─────────────────────────────── */
+.register-cta-sheen {
+  position: relative;
+  overflow: hidden;
+}
+
+.register-cta-sheen::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 60%;
+  height: 200%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 106, 19, 0.35) 35%,
+    rgba(255, 176, 32, 0.42) 50%,
+    rgba(255, 106, 19, 0.35) 65%,
+    transparent 100%
+  );
+  transform: rotate(25deg);
+  transition: left 0.75s ease;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.register-cta-sheen:hover::after {
+  left: 120%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .register-cta-sheen::after,
+  .register-cta-sheen:hover::after {
+    transition: none;
+    left: -60%;
+  }
+}
+
+/* ── STORE BUTTON NEUTRAL SHEEN ──────────────────────────── */
+.store-btn-sheen {
+  position: relative;
+  overflow: hidden;
+}
+
+.store-btn-sheen::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 60%;
+  height: 200%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.25) 50%,
+    transparent 100%
+  );
+  transform: rotate(25deg);
+  transition: left 0.75s ease;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.store-btn-sheen:hover::after {
+  left: 120%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .store-btn-sheen::after,
+  .store-btn-sheen:hover::after {
+    transition: none;
+    left: -60%;
+  }
+}

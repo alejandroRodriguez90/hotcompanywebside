@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, Suspense, lazy } from 'react';
+import { useEffect, useLayoutEffect, useState, Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Lenis from 'lenis';
 import { Navbar } from './components/layout/Navbar';
@@ -17,14 +17,14 @@ const Register = lazy(() => import('./pages/Register'));
 
 const HERO_ANCHOR = '#inicio';
 
-function AppShell() {
+function AppShell({ loaderComplete }: { loaderComplete: boolean }) {
   const { pathname } = useLocation();
   const isRegisterRoute = pathname === '/registro';
 
   return (
     <div className="flex flex-col min-h-screen text-[#F5F1EC]">
       {/* Barra de Navegación Inteligente */}
-      <Navbar showRegisterCta={!isRegisterRoute} />
+      <Navbar showRegisterCta={!isRegisterRoute} loaderComplete={loaderComplete} />
 
       {/* Rutas de la Aplicación */}
       <div className="flex-grow">
@@ -97,6 +97,7 @@ function AppShell() {
 
 export function App() {
   const reducedMotion = useReducedMotion();
+  const [loaderComplete, setLoaderComplete] = useState(false);
 
   // Inicializar Lenis para scroll suave global sincronizado
   useEffect(() => {
@@ -145,7 +146,7 @@ export function App() {
   return (
     <BrowserRouter>
       {/* Pantalla de Carga Inicial con el Dado */}
-      <Loader />
+      <Loader onComplete={() => setLoaderComplete(true)} />
 
       {/* Cursor Personalizado en Escritorio */}
       <CustomCursor />
@@ -153,7 +154,7 @@ export function App() {
       {/* Malla de Fondo Dinámica */}
       <Background />
 
-      <AppShell />
+      <AppShell loaderComplete={loaderComplete} />
     </BrowserRouter>
   );
 }

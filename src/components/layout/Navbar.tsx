@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Menu, X, UserPlus } from 'lucide-react';
@@ -8,15 +8,30 @@ import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { scrollToAnchoredElement } from '../../lib/scroll';
 import { Button } from '../ui/Button';
 
+// Garantiza que la animación de entrada "cometa -> botón" ocurra una sola vez por carga de página.
+let hasPlayedEntrance = false;
+
 interface NavbarProps {
   showRegisterCta?: boolean;
+  loaderComplete?: boolean;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ showRegisterCta = true }) => {
+export const Navbar: React.FC<NavbarProps> = ({ showRegisterCta = true, loaderComplete = false }) => {
   const navigate = useNavigate();
   const { scrollDirection, isAtTop } = useScrollDirection(12);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const reducedMotion = useReducedMotion();
+  const [entranceDone, setEntranceDone] = useState(() => hasPlayedEntrance || reducedMotion);
+
+  useEffect(() => {
+    if (loaderComplete && !showRegisterCta && !hasPlayedEntrance) {
+      hasPlayedEntrance = true;
+    }
+  }, [loaderComplete, showRegisterCta]);
+
+  const shouldSkipEntrance = reducedMotion || entranceDone;
+  const isPlayingEntrance = !shouldSkipEntrance && loaderComplete && showRegisterCta;
+  const isHeartbeatActive = !reducedMotion && entranceDone;
 
   const isHidden = scrollDirection === 'down' && !isAtTop && !mobileMenuOpen;
 
@@ -102,52 +117,79 @@ export const Navbar: React.FC<NavbarProps> = ({ showRegisterCta = true }) => {
               ))}
             </div>
 
-            {/* Desktop CTA — glassmorfista con latido "lub-dub" */}
+            {/* Desktop CTA — entrada cometa -> cápsula full glossy con latido "lub-dub" */}
             {showRegisterCta && (
               <div className="hidden md:flex items-center z-10">
-                {/*
-                  Wrapper de animación: scale + boxShadow sincronizan el patrón
-                  "lub-dub … pausa" usando times=[0, 0.10, 0.18, 0.28, 0.36, 1].
-                  - t=0→0.10 : primer pulso rojo   (lub)
-                  - t=0.18→0.28 : segundo pulso naranja (dub)
-                  - t=0.36→1.0 : pausa larga antes de repetir
-                  transform + boxShadow → no dispara layout/reflow.
-                  Glow reducido (blur 10-12px, opacidad máx 0.30-0.35) para que
-                  no tape visualmente el interior del botón a simple vista.
-                */}
                 <motion.div
-                  animate={reducedMotion ? undefined : {
-                    scale: [1, 1.04, 1, 1.04, 1, 1],
-                    boxShadow: [
-                      '0 0 0px   rgba(225,6,0,0)',
-                      '0 0 10px  rgba(225,6,0,0.30)',
-                      '0 0 4px   rgba(225,6,0,0.10)',
-                      '0 0 12px  rgba(255,106,19,0.35)',
-                      '0 0 0px   rgba(255,106,19,0)',
-                      '0 0 0px   rgba(255,106,19,0)',
-                    ],
-                  }}
-                  transition={reducedMotion ? undefined : {
-                    duration: 2.8,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                    times: [0, 0.10, 0.18, 0.28, 0.36, 1],
-                  }}
+                  initial={
+                    shouldSkipEntrance
+                      ? false
+                      : { clipPath: 'inset(0 100% 0 0 round 9999px)', opacity: 0 }
+                  }
+                  animate={
+                    shouldSkipEntrance
+                      ? { clipPath: 'none', opacity: 1 }
+                      : isPlayingEntrance
+                        ? { clipPath: 'inset(0 0% 0 0 round 9999px)', opacity: 1 }
+                        : { clipPath: 'inset(0 100% 0 0 round 9999px)', opacity: 0 }
+                  }
+                  transition={
+                    shouldSkipEntrance
+                      ? { duration: 0 }
+                      : { duration: 0.42, delay: 0.36, ease: [0.22, 1, 0.36, 1] }
+                  }
                   style={{ borderRadius: '9999px' }}
+                  onAnimationComplete={() => {
+                    if (isPlayingEntrance) {
+                      hasPlayedEntrance = true;
+                      setEntranceDone(true);
+                    }
+                  }}
                 >
                   {/*
-                    Borde degradado via <span> absolutamente posicionado (inset: -1px):
-                    - El <button> tiene SOLO el fondo interior tenue y overflow: hidden.
-                    - Span-ring (z-index 0): gradiente brand, inset -1px → asoma 1px.
-                    - Span-fill (z-index 1): fondo tenue cubre el interior del ring.
-                    - Span-content (z-index 2): icono + texto visibles encima.
-                    Sin ambigüedad de background-clip/origin; funciona igual en todos
-                    los navegadores.
+                    Wrapper de animación: scale + boxShadow sincronizan el patrón
+                    "lub-dub … pausa" usando times=[0, 0.10, 0.18, 0.28, 0.36, 1].
+                    - t=0→0.10 : primer pulso rojo   (lub)
+                    - t=0.18→0.28 : segundo pulso naranja (dub)
+                    - t=0.36→1.0 : pausa larga antes de repetir
+                    transform + boxShadow → no dispara layout/reflow.
+                    El latido inicia apenas termina el revelado de entrada.
+                  */}
+                  <motion.div
+                    animate={isHeartbeatActive ? {
+                      scale: [1, 1.04, 1, 1.04, 1, 1],
+                      boxShadow: [
+                        '0 0 0px   rgba(225,6,0,0), 0 8px 16px -4px rgba(255,106,19,0.38)',
+                        '0 0 10px  rgba(225,6,0,0.30), 0 8px 16px -4px rgba(255,106,19,0.45)',
+                        '0 0 4px   rgba(225,6,0,0.10), 0 8px 16px -4px rgba(255,106,19,0.38)',
+                        '0 0 12px  rgba(255,106,19,0.35), 0 8px 16px -4px rgba(255,106,19,0.48)',
+                        '0 0 0px   rgba(255,106,19,0), 0 8px 16px -4px rgba(255,106,19,0.38)',
+                        '0 0 0px   rgba(255,106,19,0), 0 8px 16px -4px rgba(255,106,19,0.38)',
+                      ],
+                    } : undefined}
+                    transition={isHeartbeatActive ? {
+                      duration: 2.8,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                      times: [0, 0.10, 0.18, 0.28, 0.36, 1],
+                    } : undefined}
+                    style={{
+                      borderRadius: '9999px',
+                      boxShadow: !isHeartbeatActive ? '0 8px 16px -4px rgba(255,106,19,0.38)' : undefined,
+                    }}
+                  >
+                  {/*
+                    Capas del botón "full glossy" (orden explícito de z-index):
+                    - z-index 0: span-ring (borde de cristal de 1.5px con gradiente de marca)
+                    - z-index 1: span-fill (fondo vertical con alto contraste arriba/abajo)
+                    - z-index 2: span-highlight (brillo convexo superior 55% altura)
+                    - z-index 3: .register-cta-sheen::after (barrido diagonal en hover)
+                    - z-index 4: span-content (ícono + texto)
                   */}
                   <button
                     type="button"
                     onClick={handleRegisterClick}
-                    className="relative flex items-center gap-1.5 px-4 py-2 text-xs font-sans font-medium tracking-wide text-[#F5F1EC] select-none cursor-pointer active:scale-[0.98] transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6A13] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0B]"
+                    className="register-cta-sheen relative flex items-center gap-1.5 px-4 py-2 text-xs font-sans font-medium tracking-wide text-[#F5F1EC] select-none cursor-pointer active:scale-[0.98] transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6A13] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0B]"
                     style={{
                       position: 'relative',
                       background: 'transparent',
@@ -157,36 +199,76 @@ export const Navbar: React.FC<NavbarProps> = ({ showRegisterCta = true }) => {
                       overflow: 'hidden',
                     }}
                   >
-                    {/* Anillo de borde: gradiente brand asomando 1px por todos lados */}
+                    {/* z-index 0: Anillo de borde cristalino de 1.5px */}
                     <span
                       aria-hidden="true"
                       style={{
                         position: 'absolute',
                         inset: '0',
                         borderRadius: '9999px',
-                        background: 'linear-gradient(135deg, #E10600 0%, #FF6A13 50%, #FFB020 100%)',
+                        background: 'linear-gradient(180deg, #FFB020 0%, #FF6A13 45%, #E10600 100%)',
+                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.45)',
                         zIndex: 0,
                       }}
                     />
-                    {/* Fondo interior tenue que cubre el ring, dejando solo el borde */}
+                    {/* z-index 1: Fondo interior con alto contraste vertical (luz arriba / profundo abajo) */}
                     <span
                       aria-hidden="true"
                       style={{
                         position: 'absolute',
-                        inset: '1px',
+                        inset: '1.5px',
                         borderRadius: '9998px',
-                        background: 'linear-gradient(135deg, rgba(255,106,19,0.10) 0%, rgba(10,8,9,0.92) 100%)',
+                        background: 'linear-gradient(180deg, rgba(255,106,19,0.22) 0%, rgba(22,12,11,0.90) 52%, rgba(6,5,6,0.98) 100%)',
                         zIndex: 1,
                       }}
                     />
-                    {/* Contenido encima de ambas capas */}
-                    <span style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {/* z-index 2: Highlight glossy superior (efecto cápsula convexa) */}
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        position: 'absolute',
+                        top: '1.5px',
+                        left: '1.5px',
+                        right: '1.5px',
+                        height: '55%',
+                        borderRadius: '9998px 9998px 40% 40%',
+                        background: 'linear-gradient(180deg, rgba(255,255,255,0.34) 0%, rgba(255,255,255,0.08) 42%, transparent 100%)',
+                        pointerEvents: 'none',
+                        zIndex: 2,
+                      }}
+                    />
+                    {/* z-index 4: Contenido encima del sheen (z-index 3) */}
+                    <span style={{ position: 'relative', zIndex: 4, display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <UserPlus className="w-4 h-4 shrink-0" strokeWidth={1.5} />
                       <span>Regístrate hoy</span>
                     </span>
                   </button>
+                  </motion.div>
                 </motion.div>
               </div>
+            )}
+
+            {/* Cometa de entrada: recorre la base del nav de izquierda a derecha hasta el botón */}
+            {isPlayingEntrance && (
+              <motion.span
+                aria-hidden="true"
+                initial={{ left: '22%', width: '48px', opacity: 0 }}
+                animate={{
+                  left: ['22%', '62%', '88%'],
+                  width: ['48px', '140px', '32px'],
+                  opacity: [0, 1, 1, 0],
+                }}
+                transition={{
+                  duration: 0.65,
+                  times: [0, 0.2, 0.82, 1],
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+                className="hidden md:block absolute bottom-1 h-[1.5px] rounded-full pointer-events-none z-20"
+                style={{
+                  background: 'linear-gradient(90deg, transparent 0%, #E10600 20%, #FF6A13 65%, #FFB020 100%)',
+                  boxShadow: '0 0 10px rgba(255,106,19,0.75), 0 0 4px rgba(255,176,32,0.85)',
+                }}
+              />
             )}
 
             {/* Mobile toggle */}

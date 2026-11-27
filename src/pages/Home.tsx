@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Hero } from '../components/sections/Hero';
 import { Services } from '../components/sections/Services';
 import { HowItWorks } from '../components/sections/HowItWorks';
+import { Testimonials } from '../components/sections/Testimonials';
 import { Contact } from '../components/sections/Contact';
 import { Marquee } from '../components/ui/Marquee';
 
@@ -28,6 +29,7 @@ export const Home: React.FC = () => {
       <Marquee />
       <Services />
       <HowItWorks />
+      <Testimonials />
       <Contact />
       <div id="terminos" className="sr-only" aria-hidden="true" />
     </main>
